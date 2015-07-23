@@ -7,38 +7,30 @@ import Response._
 
 object Handlers {
 
-  trait Handler {
-    def handle(op: Operation): Response
+  abstract trait BaseHandler {
+    def success(response: String) = Right(StringResponse(response))
+    def noop(op: Operation): Response = Right(EmptyResponse)
   }
 
-  def makeHandler(handler: Operation => Response) =
-    new Handler {
-      def handle(op:Operation) = handler(op)
+  trait NickHandler extends BaseHandler {
+    this: ClientActor =>
+
+    def handleNick(op: Operation): Response = {
+      Right(EmptyResponse)
     }
+  }
 
-  val noop = makeHandler { _ => Right(EmptyResponse) }
+  trait PingHandler extends BaseHandler {
+    this: ClientActor =>
 
-  val ping = makeHandler { _ => Right(StringResponse("PONG")) }
-  val pong = noop
-  val nick = noop
+    def handlePing(op: Operation): Response = {
+      Right(StringResponse(s":$host PONG $host :$host"))
+    }
+  }
+
 }
 
 trait CommandHandler {
-  this: Actor =>
-
-  import Commands._
-  import Handlers._
-
-  def handle(op: Operation): Response = {
-    op.cmd match {
-      case PingCmd => ping.handle(op)
-      case PongCmd => pong.handle(op)
-      case NickCmd => nick.handle(op)
-    }
-  }
-
-  def handleCommand(cmd: String): Response = {
-    parseCommand(cmd).right.flatMap(handle)
-  }
+  def handleCommand(cmd: String): Response
 }
 

@@ -8,7 +8,7 @@ import scala.concurrent.duration._
 
 import java.net.{InetSocketAddress, URI}
 
-class Server(listen: URI) extends Actor {
+class Server(listen: URI, hostname: String) extends Actor {
   val host = listen.getHost
   val port = listen.getPort
 
@@ -16,14 +16,14 @@ class Server(listen: URI) extends Actor {
 
   def receive: Receive = LoggingReceive {
     case Tcp.Connected(_, _) =>
-      sender ! Tcp.Register(context.actorOf(Props[Client]))
+      sender ! Tcp.Register(context.actorOf(Props(ClientActor(hostname))))
   }
 }
 
 object Server {
-  def apply(port: Int) = {
+  def apply(port: Int, hostname: String) = {
     val uri = new URI(s"http://127.0.0.1:$port")
-    new Server(uri)
+    new Server(uri, hostname)
   }
 
   def getPort(str: Array[String]) = {
@@ -34,10 +34,12 @@ object Server {
   }
 
   def main(args: Array[String]) = {
+    // TODO: configuration
+    var hostname = "localhost"
     val port = getPort(args)
 
     val system = ActorSystem("scirc")
-    val server = system.actorOf(Props(Server(port)), "server")
+    val server = system.actorOf(Props(Server(port, hostname)), "server")
 
     println(s"scirc running on port $port")
 

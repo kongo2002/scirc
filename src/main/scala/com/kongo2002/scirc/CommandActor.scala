@@ -9,8 +9,8 @@ import scala.util.{Try, Success, Failure}
 
 import Response._
 
-class Client extends Actor
-  with CommandHandler {
+abstract trait CommandActor extends Actor {
+  this: CommandHandler =>
 
   val crlf = "\r\n"
   val buffer = new StringBuilder
@@ -62,7 +62,7 @@ class Client extends Actor
     }
   }
 
-  def receive: Receive = LoggingReceive {
+  def httpReceive: Receive = LoggingReceive {
     case Tcp.Received(bs) =>
       val str = bs.utf8String
       buffer.append(str)
