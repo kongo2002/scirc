@@ -8,15 +8,31 @@ import Response._
 object Handlers {
 
   abstract trait BaseHandler {
+    this: ClientActor =>
+
+    val empty = Right(EmptyResponse)
+
     def success(response: String) = Right(StringResponse(response))
-    def noop(op: Operation): Response = Right(EmptyResponse)
+
+    def noop(op: Operation): Response = empty
+
+    def hostReply(reply: String) =
+      success(s":$host $reply")
   }
 
   trait NickHandler extends BaseHandler {
     this: ClientActor =>
 
     def handleNick(op: Operation): Response = {
-      Right(EmptyResponse)
+      val newNick = op.get(0)
+      if (nick != newNick) {
+        nick = newNick
+
+        // TODO
+        success("OK")
+      }
+      else
+        empty
     }
   }
 
@@ -24,7 +40,20 @@ object Handlers {
     this: ClientActor =>
 
     def handlePing(op: Operation): Response = {
-      Right(StringResponse(s":$host PONG $host :$host"))
+      hostReply(s"PONG $host :$host")
+    }
+  }
+
+  trait QuitHandler extends BaseHandler {
+    this: ClientActor =>
+
+    def handleQuit(op: Operation): Response = {
+      val msg = op.get(0, "Leaving.")
+
+      // send quit
+      context stop self
+
+      Left(StringError(s"QUIT :$msg"))
     }
   }
 

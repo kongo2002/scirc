@@ -3,7 +3,12 @@ package com.kongo2002.scirc
 import akka.actor.Actor
 import akka.util.ByteString
 
-case class Operation(cmd: Command, args: Array[String])
+case class Operation(cmd: Command, args: Array[String]) {
+  def get(idx: Int): String = get(idx, "")
+  def get(idx: Int, default: String): String = {
+    if (idx < args.size) args(idx) else default
+  }
+}
 
 abstract class Command(cmd: String, numArgs: Int) {
   def validate(input: Array[String]) = input.size >= numArgs
@@ -18,11 +23,13 @@ object Commands {
   case object PingCmd extends OneArgCommand("PING")
   case object PongCmd extends NoArgCommand("PONG")
   case object NickCmd extends OneArgCommand("NICK")
+  case object QuitCmd extends NoArgCommand("QUIT")
 
   val cmds: Map[String, Command] = Map(
     "PING" -> PingCmd,
     "PONG" -> PongCmd,
-    "NICK" -> NickCmd
+    "NICK" -> NickCmd,
+    "QUIT" -> QuitCmd
   )
 
   def parseCommand(input: String): Either[ErrorResponse, Operation] = {

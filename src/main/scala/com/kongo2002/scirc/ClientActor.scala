@@ -12,6 +12,7 @@ class ClientActor(val host: String)
  extends CommandActor
  with NickHandler
  with PingHandler
+ with QuitHandler
  with CommandHandler {
 
   import Commands._
@@ -23,6 +24,7 @@ class ClientActor(val host: String)
     op.cmd match {
       case PingCmd => handlePing(op)
       case NickCmd => handleNick(op)
+      case QuitCmd => handleQuit(op)
       case PongCmd => noop(op)
     }
   }
