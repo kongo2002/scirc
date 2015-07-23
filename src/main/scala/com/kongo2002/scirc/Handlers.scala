@@ -5,18 +5,21 @@ import akka.util.ByteString
 
 import scala.util.{Try, Success, Failure}
 
+import Response._
+
 object Handlers {
+
   trait Handler {
-    def handle(op: Operation): Either[String, String]
+    def handle(op: Operation): Response
   }
 
-  def makeHandler(handler: Operation => Either[String, String]) =
+  def makeHandler(handler: Operation => Response) =
     new Handler {
       def handle(op:Operation) = handler(op)
     }
 
-  val noop = makeHandler { _ => Right("OK") }
-  val ping = makeHandler { _ => Right("PONG") }
+  val noop = makeHandler { _ => Right(EmptyResponse) }
+  val ping = makeHandler { _ => Right(StringResponse("PONG")) }
   val nick = noop
 }
 
@@ -26,14 +29,14 @@ trait CommandHandler {
   import Commands._
   import Handlers._
 
-  def handle(op: Operation): Either[String, String] = {
+  def handle(op: Operation): Response = {
     op.cmd match {
       case PingCmd => ping.handle(op)
       case NickCmd => nick.handle(op)
     }
   }
 
-  def handleCommand(cmd: String): Either[String, String] = {
+  def handleCommand(cmd: String): Response = {
     parseCommand(cmd).right.flatMap(handle)
   }
 }

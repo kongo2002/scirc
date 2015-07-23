@@ -3,8 +3,6 @@ package com.kongo2002.scirc
 import akka.actor.Actor
 import akka.util.ByteString
 
-import scala.util.{Try, Success, Failure}
-
 case class Operation(cmd: Command, args: Array[String])
 
 abstract class Command(cmd: String, numArgs: Int) {
@@ -15,6 +13,8 @@ abstract class OneArgCommand(cmd: String)
   extends Command(cmd, 1)
 
 object Commands {
+  import Response._
+
   case object PingCmd extends OneArgCommand("PING")
   case object NickCmd extends OneArgCommand("NICK")
 
@@ -23,11 +23,11 @@ object Commands {
     "NICK" -> NickCmd
   )
 
-  def parseCommand(input: String): Either[String, Operation] = {
+  def parseCommand(input: String): Either[ErrorResponse, Operation] = {
     val parts = input.split(' ').filter(_ != "")
 
     if (parts.size < 1)
-      Left("invalid command given")
+      Left(StringError("invalid command given"))
     else {
       cmds.get(parts(0)) match {
         case Some(cmd) =>
@@ -36,9 +36,9 @@ object Commands {
           if (cmd.validate(args))
             Right(Operation(cmd, args))
           else
-            Left("insufficient arguments")
+            Left(StringError("insufficient arguments"))
         case None =>
-          Left("unknown command")
+          Left(StringError("unknown command"))
       }
     }
   }

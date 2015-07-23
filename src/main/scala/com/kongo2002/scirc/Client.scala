@@ -7,6 +7,8 @@ import akka.util.ByteString
 
 import scala.util.{Try, Success, Failure}
 
+import Response._
+
 class Client extends Actor
   with CommandHandler {
 
@@ -42,15 +44,22 @@ class Client extends Actor
     parse
   }
 
-  def writeResponse(cmd: String) = {
+  def errorResponse(e: ErrorResponse) = e match {
+    case StringError(err) => err + crlf
+  }
+
+  def writeResponse(res: SuccessResponse) = res match {
+    case EmptyResponse => None
+    case StringResponse(str) => Some(str + crlf)
+  }
+
+  def process(cmd: String) = {
+    def send(x: String) = sender ! Tcp.Write(ByteString(x))
+
     val res = handleCommand(cmd) match {
-      case Right(res) => res + crlf
-
-      // TODO: more accurate error types
-      case Left(x) => x + crlf
+      case Right(res) => writeResponse(res) map (send _)
+      case Left(e) => send(errorResponse(e))
     }
-
-    sender ! Tcp.Write(ByteString(res))
   }
 
   def receive: Receive = LoggingReceive {
@@ -59,7 +68,7 @@ class Client extends Actor
       buffer.append(str)
 
       val cmds = parseBuffer
-      cmds foreach writeResponse
+      cmds foreach process
 
     case Tcp.PeerClosed =>
       println("Connection closed")
