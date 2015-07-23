@@ -40,8 +40,10 @@ class Client extends Actor
 
   def writeResponse(cmd: String) = {
     val res = handleCommand(cmd) match {
-      case Success(res) => res + crlf
-      case Failure(x) => x.toString + crlf
+      case Right(res) => res + crlf
+
+      // TODO: more accurate error types
+      case Left(x) => x + crlf
     }
 
     sender ! Tcp.Write(ByteString(res))
