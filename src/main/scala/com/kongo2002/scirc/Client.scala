@@ -30,8 +30,12 @@ class Client extends Actor
 
     def parse: List[String] = {
       next match {
-        case None => Nil
         case Some(cmd) => cmd :: parse
+        case None =>
+          // nothing more to match (so far)
+          // remove processed contents
+          buffer.delete(0, idx)
+          Nil
       }
     }
 
