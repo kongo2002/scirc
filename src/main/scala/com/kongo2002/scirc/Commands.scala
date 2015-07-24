@@ -32,23 +32,35 @@ object Commands {
     "QUIT" -> QuitCmd
   )
 
-  def parseCommand(input: String): Either[ErrorResponse, Operation] = {
-    val parts = input.split(' ').filter(_ != "")
-
-    if (parts.size < 1)
-      Left(StringError("invalid command given"))
-    else {
-      cmds.get(parts(0)) match {
-        case Some(cmd) =>
-          val args = parts.drop(1)
-
-          if (cmd.validate(args))
-            Right(Operation(cmd, args))
-          else
-            Left(StringError("insufficient arguments"))
-        case None =>
-          Left(StringError("unknown command"))
+  def getArguments(args: List[String]): Array[String] = args match {
+    case Nil => Array()
+    case args :: _ =>
+      if (args.size > 0 && args(0) == ':')
+        Array(args.drop(1))
+      else {
+        Utils.splitFirst(args, " :") match {
+          case List(fst, rest) =>
+            fst.split(" ") :+ rest
+          case _ => args.split(" ")
+        }
       }
+  }
+
+  def parseCommand(input: String): Either[ErrorResponse, Operation] = {
+    Utils.splitFirst(input, " ") match {
+      case cmd :: rest =>
+        cmds.get(cmd) match {
+          case Some(c) =>
+            val arguments = getArguments(rest)
+            if (c.validate(arguments))
+              Right(Operation(c, arguments))
+            else
+              Left(StringError("insufficient arguments"))
+          case None =>
+            Left(StringError("unknown command"))
+        }
+      case _ =>
+        Left(StringError("invalid command given"))
     }
   }
 }
