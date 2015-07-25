@@ -1,30 +1,33 @@
 package com.kongo2002.scirc
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
 
 import Handlers._
 
 object ClientActor {
-  def apply(host: String) = new ClientActor(host)
+  def apply(server: ServerContext, nickManager: ActorRef) =
+    new ClientActor(server, nickManager)
 }
 
-class ClientActor(val host: String)
- extends CommandActor
- with NickHandler
- with PingHandler
- with QuitHandler
- with CommandHandler {
+class ClientActor(val server: ServerContext, val nickManager: ActorRef)
+  extends CommandActor
+  with NickHandler
+  with PingHandler
+  with UserHandler
+  with QuitHandler
+  with CommandHandler {
 
   import Commands._
   import Response._
 
-  var nick = "unknown"
+  implicit val ctx = ClientContext(server, "")
 
   def handle(op: Operation): Response = {
     op.cmd match {
       case PingCmd => handlePing(op)
       case NickCmd => handleNick(op)
       case QuitCmd => handleQuit(op)
+      case UserCmd => handleUser(op)
       case PongCmd => noop(op)
     }
   }
@@ -34,5 +37,5 @@ class ClientActor(val host: String)
   }
 
   // use HTTP handling of the CommandActor for now
-  def receive = httpReceive
+  def receive = httpReceive orElse nickReceive
 }

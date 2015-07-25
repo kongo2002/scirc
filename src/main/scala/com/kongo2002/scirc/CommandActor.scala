@@ -1,6 +1,6 @@
 package com.kongo2002.scirc
 
-import akka.actor.Actor
+import akka.actor.{Actor, ActorRef}
 import akka.event.LoggingReceive
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
@@ -46,19 +46,33 @@ abstract trait CommandActor extends Actor {
 
   def errorResponse(e: ErrorResponse) = e match {
     case StringError(err) => err + crlf
+    case x: ErrorNumericReply => x.getMessage + crlf
   }
 
-  def writeResponse(res: SuccessResponse) = res match {
+  def writeResponse(res: SuccessResponse): Option[String] = res match {
     case EmptyResponse => None
     case StringResponse(str) => Some(str + crlf)
+    case ListResponse(rs) =>
+      Some(rs.map(writeResponse(_).getOrElse("")).mkString(""))
+    case x: SuccessNumericReply => Some(x.getMessage + crlf)
   }
 
-  def process(cmd: String) = {
-    def send(x: String) = sender ! Tcp.Write(ByteString(x))
+  def sendError(e: ErrorResponse, sendFunc: String => Unit) = {
+    sendFunc(errorResponse(e))
+  }
 
+  def sendResponse(res: SuccessResponse, sendFunc: String => Unit) = {
+    writeResponse(res) map (sendFunc)
+  }
+
+  def send(x: String) = sender ! Tcp.Write(ByteString(x))
+
+  def sendTo(to: ActorRef)(x: String) = to ! Tcp.Write(ByteString(x))
+
+  def process(cmd: String) = {
     val res = handleCommand(cmd) match {
-      case Right(res) => writeResponse(res) map (send _)
-      case Left(e) => send(errorResponse(e))
+      case Right(res) => sendResponse(res, send)
+      case Left(e) => sendError(e, send)
     }
   }
 

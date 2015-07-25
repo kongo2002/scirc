@@ -11,12 +11,19 @@ import java.net.{InetSocketAddress, URI}
 class Server(listen: URI, hostname: String) extends Actor {
   val host = listen.getHost
   val port = listen.getPort
+  val ctx = ServerContext(hostname, 0)
+
+  var nickManager = context.system.deadLetters
 
   IO(Tcp)(context.system) ! Tcp.Bind(self, new InetSocketAddress(host, port))
 
+  override def preStart = {
+    nickManager = context.actorOf(Props[NickManager], "nickmanager")
+  }
+
   def receive: Receive = LoggingReceive {
     case Tcp.Connected(_, _) =>
-      sender ! Tcp.Register(context.actorOf(Props(ClientActor(hostname))))
+      sender ! Tcp.Register(context.actorOf(Props(ClientActor(ctx, nickManager))))
   }
 }
 

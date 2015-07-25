@@ -8,6 +8,13 @@ case class Operation(cmd: Command, args: Array[String]) {
   def get(idx: Int, default: String): String = {
     if (idx < args.size) args(idx) else default
   }
+  def getInt(idx: Int): Option[Int] = {
+    try {
+      Some(get(idx).toInt)
+    } catch {
+      case e: NumberFormatException => None
+    }
+  }
 }
 
 abstract class Command(cmd: String, numArgs: Int) {
@@ -24,11 +31,13 @@ object Commands {
   case object PongCmd extends NoArgCommand("PONG")
   case object NickCmd extends OneArgCommand("NICK")
   case object QuitCmd extends NoArgCommand("QUIT")
+  case object UserCmd extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
     "PING" -> PingCmd,
     "PONG" -> PongCmd,
     "NICK" -> NickCmd,
+    "USER" -> UserCmd,
     "QUIT" -> QuitCmd
   )
 
@@ -55,7 +64,7 @@ object Commands {
             if (c.validate(arguments))
               Right(Operation(c, arguments))
             else
-              Left(StringError("insufficient arguments"))
+              Left(ErrorNeedMoreParams(cmd))
           case None =>
             Left(StringError("unknown command"))
         }

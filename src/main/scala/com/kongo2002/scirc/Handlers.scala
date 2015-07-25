@@ -17,22 +17,62 @@ object Handlers {
     def noop(op: Operation): Response = empty
 
     def hostReply(reply: String) =
-      success(s":$host $reply")
+      success(s":${server.host} $reply")
   }
 
   trait NickHandler extends BaseHandler {
     this: ClientActor =>
 
+    import NickManager._
+
     def handleNick(op: Operation): Response = {
       val newNick = op.get(0)
-      if (nick != newNick) {
-        nick = newNick
+      val nick = ctx.nick
 
-        // TODO
-        success("OK")
+      if (nick != newNick) {
+        val isNew = nick == ""
+
+        if (isNew)
+          nickManager ! RegisterNick(newNick, sender)
+        else
+          nickManager ! ChangeNick(nick, newNick, sender)
       }
-      else
-        empty
+
+      empty
+    }
+
+    def nickReceive: Receive = {
+      case NickAck(newNick, rec) =>
+        ctx.nick = newNick
+      case NickErr(err, rec) =>
+        sendError(StringError(err), sendTo(rec))
+    }
+  }
+
+  trait UserHandler extends BaseHandler {
+    this: ClientActor =>
+
+    def handleUser(op: Operation): Response = {
+      ctx.user = op.get(0)
+      ctx.realname = op.get(3)
+      ctx.modes = op.getInt(1).getOrElse(0)
+
+      // TODO
+      val version = "scirc-0.1"
+      val host = server.host
+      val nick = ctx.nick
+      val df = java.text.DateFormat.getDateInstance()
+      val tz = java.util.TimeZone.getTimeZone("UTC")
+      val time = df.format(server.created)
+
+      Right(ListResponse(List(
+        ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
+        ReplyYourHost(s"Your host is $host, running version $version"),
+        // TODO: created timestamp
+        ReplyCreated(s"This server was created $time"),
+        // TODO: modes
+        ReplyMyInfo(s"$host $version o o")
+        )))
     }
   }
 
@@ -40,6 +80,7 @@ object Handlers {
     this: ClientActor =>
 
     def handlePing(op: Operation): Response = {
+      val host = server.host
       hostReply(s"PONG $host :$host")
     }
   }
@@ -48,7 +89,7 @@ object Handlers {
     this: ClientActor =>
 
     def handleQuit(op: Operation): Response = {
-      val msg = op.get(0, "Leaving.")
+      val msg = op.get(0, "leaving")
 
       // send quit
       context stop self
@@ -59,7 +100,8 @@ object Handlers {
 
 }
 
-trait CommandHandler {
+abstract trait CommandHandler {
   def handleCommand(cmd: String): Response
+  implicit val ctx: ClientContext
 }
 
