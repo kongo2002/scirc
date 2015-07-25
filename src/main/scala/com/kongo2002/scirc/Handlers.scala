@@ -57,7 +57,7 @@ object Handlers {
       ctx.realname = op.get(3)
       ctx.modes = op.getInt(1).getOrElse(0)
 
-      // TODO
+      // TODO: version
       val version = "scirc-0.1"
       val host = server.host
       val nick = ctx.nick
@@ -68,7 +68,6 @@ object Handlers {
       Right(ListResponse(List(
         ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
         ReplyYourHost(s"Your host is $host, running version $version"),
-        // TODO: created timestamp
         ReplyCreated(s"This server was created $time"),
         // TODO: modes
         ReplyMyInfo(s"$host $version o o")
@@ -88,11 +87,16 @@ object Handlers {
   trait QuitHandler extends BaseHandler {
     this: ClientActor =>
 
+    import NickManager._
+
     def handleQuit(op: Operation): Response = {
       val msg = op.get(0, "leaving")
 
-      // send quit
+      // terminate itself
       context stop self
+
+      // unregister nick
+      nickManager ! DisconnectNick(ctx.nick)
 
       Left(StringError(s"QUIT :$msg"))
     }

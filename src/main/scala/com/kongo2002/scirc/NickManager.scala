@@ -5,10 +5,13 @@ import akka.actor.{Actor, ActorRef}
 import scala.collection.immutable.HashMap
 
 object NickManager {
+  // requests
   case class RegisterNick(nick: String, rec: ActorRef)
   case class ChangeNick(from: String, to: String, rec: ActorRef)
   case class NickCount(rec: ActorRef)
+  case class DisconnectNick(nick: String)
 
+  // responses
   case class NickAck(newNick: String, rec: ActorRef)
   case class NickErr(error: String, rec: ActorRef)
   case class Nicks(count: Int, rec: ActorRef)
@@ -47,6 +50,9 @@ class NickManager extends Actor {
         nicks = nicks + ((nick, sender))
         sender ! NickAck(nick, rec)
       }
+
+    case DisconnectNick(nick) =>
+      nicks = nicks - nick
 
     case NickCount(rec) =>
       sender ! Nicks(nicks.size, rec)

@@ -83,9 +83,5 @@ abstract trait CommandActor extends Actor {
 
       val cmds = parseBuffer
       cmds foreach process
-
-    case Tcp.PeerClosed =>
-      println("Connection closed")
-      context stop self
   }
 }

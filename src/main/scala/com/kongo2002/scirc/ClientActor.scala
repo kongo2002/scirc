@@ -1,6 +1,7 @@
 package com.kongo2002.scirc
 
 import akka.actor.{Actor, ActorRef}
+import akka.io.Tcp
 
 import Handlers._
 
@@ -18,6 +19,7 @@ class ClientActor(val server: ServerContext, val nickManager: ActorRef)
   with CommandHandler {
 
   import Commands._
+  import NickManager._
   import Response._
 
   implicit val ctx = ClientContext(server, "")
@@ -36,6 +38,14 @@ class ClientActor(val server: ServerContext, val nickManager: ActorRef)
     parseCommand(cmd).right.flatMap(handle)
   }
 
+  def handleClose: Receive = {
+    case Tcp.PeerClosed =>
+      println("Connection closed")
+
+      nickManager ! DisconnectNick(ctx.nick)
+      context stop self
+  }
+
   // use HTTP handling of the CommandActor for now
-  def receive = httpReceive orElse nickReceive
+  def receive = httpReceive orElse nickReceive orElse handleClose
 }
