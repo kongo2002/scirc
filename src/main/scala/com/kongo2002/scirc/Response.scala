@@ -38,6 +38,8 @@ object Response {
     extends ErrorNumericReply(403, s"$channel :No such channel")
   case class ErrorNickAlreadyInUse(nick: String)
     extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
+  case class ErrorNotOnChannel(channel: String)
+    extends ErrorNumericReply(442, s"$channel :You're not on that channel")
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 

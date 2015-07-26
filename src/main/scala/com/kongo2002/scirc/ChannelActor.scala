@@ -23,6 +23,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   with SendActor {
 
   import ChannelActor._
+  import Response._
 
   var topic = ""
   val members = Map.empty[String, Client]
@@ -65,6 +66,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     case UserPart(nick, reason, client) =>
       if (part(nick)) {
         toAll(s":$nick!$nick@${server.host} PART $name :$reason\r\n")
+      }
+      // user is not on the requested channel
+      else {
+        client.client ! Err(ErrorNotOnChannel(name), client)
       }
   }
 }
