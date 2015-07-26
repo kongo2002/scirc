@@ -12,13 +12,16 @@ object ChannelActor {
 
   // request messages
   case class UserJoin(nick: String, client: Client)
-  case class UserPart(nick: String, client: Client)
+  case class UserPart(nick: String, reason: String, client: Client)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, names: List[String], client: Client)
 }
 
-class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext) extends Actor {
+class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext)
+  extends Actor
+  with SendActor {
+
   import ChannelActor._
 
   var topic = ""
@@ -42,10 +45,6 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     }
   }
 
-  def send(msg: ByteString)(client: Client) {
-    client.socket ! Tcp.Write(msg)
-  }
-
   def toAll(msg: String) {
     val bytes = ByteString(msg)
     members.values.foreach (send(bytes))
@@ -63,9 +62,9 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         toAll(s":$nick!$nick@${server.host} JOIN $name\r\n")
       }
 
-    case UserPart(nick, client) =>
+    case UserPart(nick, reason, client) =>
       if (part(nick)) {
-        // TODO: part notification
+        toAll(s":$nick!$nick@${server.host} PART $name :$reason\r\n")
       }
   }
 }

@@ -22,6 +22,7 @@ class ClientActor(val server: ServerContext,
   with IsonHandler
   with JoinHandler
   with QuitHandler
+  with PartHandler
   with CommandHandler {
 
   import Commands._
@@ -40,6 +41,7 @@ class ClientActor(val server: ServerContext,
       case UserCmd => handleUser _
       case IsonCmd => handleIson _
       case JoinCmd => handleJoin _
+      case PartCmd => handlePart _
       case PongCmd => noop _
     }
 
@@ -57,10 +59,15 @@ class ClientActor(val server: ServerContext,
       disconnect(Client(self, sender))
   }
 
+  def handleError: Receive = {
+    case Err(e, client) => sendError(e, sendTo(client))
+  }
+
   def receive =
     httpReceive orElse
     nickReceive orElse
     isonReceive orElse
     joinReceive orElse
+    handleError orElse
     handleClose
 }

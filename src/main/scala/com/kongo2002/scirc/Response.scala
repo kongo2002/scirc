@@ -1,6 +1,13 @@
 package com.kongo2002.scirc
 
+import akka.actor.Actor
+import akka.io.Tcp
+import akka.util.ByteString
+
 object Response {
+  // error message
+  case class Err(e: ErrorResponse, client: Client)
+
   // general response
   type Response = Either[ErrorResponse, SuccessResponse]
 
@@ -27,6 +34,8 @@ object Response {
 
   case class StringError(msg: String) extends ErrorNumericReply(0, msg)
 
+  case class ErrorNoSuchChannel(channel: String)
+    extends ErrorNumericReply(403, s"$channel :No such channel")
   case class ErrorNickAlreadyInUse(nick: String)
     extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
   case class ErrorNeedMoreParams(cmd: String)

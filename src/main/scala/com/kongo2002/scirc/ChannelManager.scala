@@ -10,12 +10,16 @@ object ChannelManager {
 
   // request messages
   case class ChannelJoin(channel: String, nick: String, client: Client)
+  case class ChannelPart(channel: String, nick: String, reason: String, client: Client)
 }
 
-class ChannelManager(server: ServerContext) extends Actor {
+class ChannelManager(server: ServerContext)
+  extends Actor
+  with SendActor {
 
   import ChannelActor._
   import ChannelManager._
+  import Response._
 
   val channels = Map.empty[String, ActorRef]
 
@@ -36,17 +40,26 @@ class ChannelManager(server: ServerContext) extends Actor {
     }
   }
 
-  def partAll(nick: String, client: Client) = {
+  def partAll(nick: String, reason: String, client: Client) = {
     channels.values.foreach { c =>
-      c ! UserPart(nick, client)
+      c ! UserPart(nick, reason, client)
     }
   }
 
   def receive: Receive = {
+
     case ChannelJoin(channel, nick, client) =>
       if (channel == "0")
-        partAll(nick, client)
+        partAll(nick, "leaving", client)
       else
         join(channel, nick, client)
+
+    case ChannelPart(channel, nick, reason, client) =>
+      channels.get(channel) match {
+        case Some(c) =>
+          c ! UserPart(nick, reason, client)
+        case None =>
+          client.client ! Err(ErrorNoSuchChannel(channel), client)
+      }
   }
 }
