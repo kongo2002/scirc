@@ -45,4 +45,8 @@ object Response {
 
   case class ReplyIson(msg: String)
     extends SuccessNumericReply(303, msg)
+  case class ReplyNoTopic(channel: String)
+    extends SuccessNumericReply(331, s"$channel :No topic is set")
+  case class ReplyTopic(channel: String, topic: String)
+    extends SuccessNumericReply(332, s"$channel :$topic")
 }

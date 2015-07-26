@@ -20,19 +20,34 @@ class ChannelManager extends Actor {
 
   // TODO: import persisted/saved channels
 
+  def join(channel: String, nick: String, rec: ActorRef) = {
+    channels.get(channel) match {
+      // channel already exists -> just join
+      case Some(c) =>
+        if (c.join(nick, sender))
+          sender ! ChannelJoined(channel, c.topic, rec)
+      // new channel -> create a new one
+      case None =>
+        val newChannel = new ChannelInfo(channel)
+        newChannel.join(nick, sender)
+        sender ! ChannelJoined(channel, newChannel.topic, rec)
+    }
+  }
+
+  def partAll(nick: String, rec: ActorRef) = {
+    channels.values.foreach { c =>
+      if (c.part(nick)) {
+        // TODO: notify channel
+      }
+    }
+  }
+
   def receive: Receive = {
     case ChannelJoin(channel, nick, rec) =>
-      channels.get(channel) match {
-        // channel already exists -> just join
-        case Some(c) =>
-          if (c.join(nick, sender))
-            sender ! ChannelJoined(channel, c.topic, rec)
-        // new channel -> create a new one
-        case None =>
-          val newChannel = new ChannelInfo(channel)
-          newChannel.join(nick, sender)
-          sender ! ChannelJoined(channel, newChannel.topic, rec)
-      }
+      if (channel == "0")
+        partAll(nick, rec)
+      else
+        join(channel, nick, rec)
   }
 }
 
@@ -49,7 +64,12 @@ class ChannelInfo(name: String) {
     }
   }
 
-  def part(nick: String) {
-    members -= nick
+  def part(nick: String) = {
+    if (members.contains(nick)) {
+      members -= nick
+      true
+    } else {
+      false
+    }
   }
 }

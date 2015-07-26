@@ -12,16 +12,18 @@ object ClientActor {
 
 class ClientActor(val server: ServerContext,
     val nickManager: ActorRef,
-    val channelmanager: ActorRef)
+    val channelManager: ActorRef)
   extends CommandActor
   with NickHandler
   with PingHandler
   with UserHandler
   with IsonHandler
+  with JoinHandler
   with QuitHandler
   with CommandHandler {
 
   import Commands._
+  import ChannelManager._
   import NickManager._
   import Response._
 
@@ -34,6 +36,7 @@ class ClientActor(val server: ServerContext,
       case QuitCmd => handleQuit(op)
       case UserCmd => handleUser(op)
       case IsonCmd => handleIson(op)
+      case JoinCmd => handleJoin(op)
       case PongCmd => noop(op)
     }
   }
@@ -46,14 +49,13 @@ class ClientActor(val server: ServerContext,
     case Tcp.PeerClosed =>
       println("Connection closed")
 
-      nickManager ! DisconnectNick(ctx.nick)
-      context stop self
+      disconnect
   }
 
-  // use HTTP handling of the CommandActor for now
   def receive =
     httpReceive orElse
     nickReceive orElse
     isonReceive orElse
+    joinReceive orElse
     handleClose
 }

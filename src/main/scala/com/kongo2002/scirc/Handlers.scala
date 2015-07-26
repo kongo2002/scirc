@@ -75,6 +75,28 @@ object Handlers {
     }
   }
 
+  trait JoinHandler extends BaseHandler {
+    this: ClientActor =>
+
+    import ChannelManager._
+
+    def handleJoin(op: Operation): Response = {
+      // TODO: handle multiple channels
+      // TODO: handle keys
+      var channel = op.get(0)
+      channelManager ! ChannelJoin(channel, ctx.nick, sender)
+      empty
+    }
+
+    def joinReceive: Receive = {
+      case ChannelJoined(ch, topic, rec) =>
+        topic match {
+          case "" => sendResponse(ReplyNoTopic(ch), sendTo(rec))
+          case _ => sendResponse(ReplyTopic(ch, topic), sendTo(rec))
+        }
+    }
+  }
+
   trait IsonHandler extends BaseHandler {
     this: ClientActor =>
 
@@ -103,16 +125,22 @@ object Handlers {
   trait QuitHandler extends BaseHandler {
     this: ClientActor =>
 
+    import ChannelManager._
     import NickManager._
 
-    def handleQuit(op: Operation): Response = {
-      val msg = op.get(0, "leaving")
-
+    def disconnect {
       // terminate itself
       context stop self
 
       // unregister nick
+      channelManager ! ChannelJoin("0", ctx.nick, sender)
       nickManager ! DisconnectNick(ctx.nick)
+    }
+
+    def handleQuit(op: Operation): Response = {
+      val msg = op.get(0, "leaving")
+
+      disconnect
 
       Left(StringError(s"QUIT :$msg"))
     }
