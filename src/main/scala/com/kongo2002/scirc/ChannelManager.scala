@@ -5,11 +5,14 @@ import akka.actor.{Actor, ActorRef, Props}
 import scala.collection.mutable.Map
 
 object ChannelManager {
+  def apply(server: ServerContext) =
+    new ChannelManager(server)
+
   // request messages
   case class ChannelJoin(channel: String, nick: String, client: Client)
 }
 
-class ChannelManager extends Actor {
+class ChannelManager(server: ServerContext) extends Actor {
 
   import ChannelActor._
   import ChannelManager._
@@ -26,7 +29,7 @@ class ChannelManager extends Actor {
       // new channel -> create a new one
       case None =>
         val newChannel = context.actorOf(
-          Props(ChannelActor(channel, self)))
+          Props(ChannelActor(channel, self, server)))
 
         channels += (channel -> newChannel)
         newChannel ! UserJoin(nick, client)

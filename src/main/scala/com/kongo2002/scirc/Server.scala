@@ -20,7 +20,7 @@ class Server(listen: URI, hostname: String) extends Actor {
 
   override def preStart = {
     nickManager = context.actorOf(Props[NickManager], "nickmanager")
-    channelManager = context.actorOf(Props[ChannelManager], "channelmanager")
+    channelManager = context.actorOf(Props(ChannelManager(ctx)), "channelmanager")
   }
 
   def receive: Receive = LoggingReceive {
