@@ -36,10 +36,19 @@ object Response {
 
   case class ErrorNoSuchChannel(channel: String)
     extends ErrorNumericReply(403, s"$channel :No such channel")
+
+  case class ErrorNoRecipient(cmd: String)
+    extends ErrorNumericReply(411, s":No recipient given ($cmd)")
+
+  case object ErrorNoTextToSend
+    extends ErrorNumericReply(412, ":No text to send")
+
   case class ErrorNickAlreadyInUse(nick: String)
     extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
+
   case class ErrorNotOnChannel(channel: String)
     extends ErrorNumericReply(442, s"$channel :You're not on that channel")
+
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 
@@ -55,22 +64,29 @@ object Response {
 
   case class ReplyWelcome(msg: String)
     extends SuccessNumericReply(1, msg)
+
   case class ReplyYourHost(msg: String)
     extends SuccessNumericReply(2, msg)
+
   case class ReplyCreated(msg: String)
     extends SuccessNumericReply(3, msg)
+
   case class ReplyMyInfo(msg: String)
     extends SuccessNumericReply(4, msg)
 
   case class ReplyIson(msg: String)
     extends SuccessNumericReply(303, msg)
+
   case class ReplyNoTopic(channel: String)
     extends SuccessNumericReply(331, s"$channel :No topic is set")
+
   case class ReplyTopic(channel: String, topic: String)
     extends SuccessNumericReply(332, s"$channel :$topic")
+
   // TODO: channel type
   case class ReplyChannelNames(channel: String, names: String)
     extends SuccessNumericReply(353, s"= $channel :$names")
+
   case class ReplyEndOfNames(channel: String)
     extends SuccessNumericReply(366, s"$channel :End of NAMES list")
 }

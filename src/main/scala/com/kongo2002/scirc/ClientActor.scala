@@ -23,6 +23,7 @@ class ClientActor(val server: ServerContext,
   with JoinHandler
   with QuitHandler
   with PartHandler
+  with PrivMsgHandler
   with CommandHandler {
 
   import Commands._
@@ -35,14 +36,15 @@ class ClientActor(val server: ServerContext,
   def handle(op: Operation): Response = {
     val client = Client(self, sender)
     val handler = op.cmd match {
-      case PingCmd => handlePing _
-      case NickCmd => handleNick _
-      case QuitCmd => handleQuit _
-      case UserCmd => handleUser _
-      case IsonCmd => handleIson _
-      case JoinCmd => handleJoin _
-      case PartCmd => handlePart _
-      case PongCmd => noop _
+      case PingCmd    => handlePing _
+      case NickCmd    => handleNick _
+      case QuitCmd    => handleQuit _
+      case UserCmd    => handleUser _
+      case IsonCmd    => handleIson _
+      case JoinCmd    => handleJoin _
+      case PartCmd    => handlePart _
+      case PrivMsgCmd => handlePrivMsg _
+      case PongCmd    => noop _
     }
 
     handler(op, client)

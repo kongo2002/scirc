@@ -34,17 +34,19 @@ object Commands {
   case object IsonCmd extends OneArgCommand("ISON")
   case object JoinCmd extends OneArgCommand("JOIN")
   case object PartCmd extends OneArgCommand("PART")
+  case object PrivMsgCmd extends NoArgCommand("PRIVMSG")
   case object UserCmd extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
-    "PING" -> PingCmd,
-    "PONG" -> PongCmd,
-    "NICK" -> NickCmd,
-    "USER" -> UserCmd,
-    "ISON" -> IsonCmd,
-    "JOIN" -> JoinCmd,
-    "PART" -> PartCmd,
-    "QUIT" -> QuitCmd
+    "PING"    -> PingCmd,
+    "PONG"    -> PongCmd,
+    "NICK"    -> NickCmd,
+    "USER"    -> UserCmd,
+    "ISON"    -> IsonCmd,
+    "JOIN"    -> JoinCmd,
+    "PART"    -> PartCmd,
+    "PRIVMSG" -> PrivMsgCmd,
+    "QUIT"    -> QuitCmd
   )
 
   def getArguments(args: List[String]): Array[String] = args match {

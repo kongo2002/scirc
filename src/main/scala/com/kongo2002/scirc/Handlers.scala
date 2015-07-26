@@ -49,6 +49,23 @@ object Handlers {
     }
   }
 
+  trait PrivMsgHandler extends BaseHandler {
+    this: ClientActor =>
+
+    def handlePrivMsg(op: Operation, client: Client): Response = {
+      val rec = op.get(0)
+      val text = op.get(1)
+
+      if (rec == "")
+        Left(ErrorNoRecipient("PRIVMSG"))
+      else if (text == "")
+        Left(ErrorNoTextToSend)
+      else {
+        empty
+      }
+    }
+  }
+
   trait UserHandler extends BaseHandler {
     this: ClientActor =>
 
