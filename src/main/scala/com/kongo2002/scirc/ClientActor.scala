@@ -10,6 +10,8 @@ case class Client(client: ActorRef, socket: ActorRef)
 object ClientActor {
   def apply(server: ServerContext, nickManager: ActorRef, channelManager: ActorRef) =
     new ClientActor(server, nickManager, channelManager)
+
+  case class PrivMsg(recipient: String, text: String, from: String, client: Client)
 }
 
 class ClientActor(val server: ServerContext,

@@ -52,6 +52,8 @@ object Handlers {
   trait PrivMsgHandler extends BaseHandler {
     this: ClientActor =>
 
+    import ClientActor._
+
     def handlePrivMsg(op: Operation, client: Client): Response = {
       val rec = op.get(0)
       val text = op.get(1)
@@ -61,6 +63,8 @@ object Handlers {
       else if (text == "")
         Left(ErrorNoTextToSend)
       else {
+        // TODO: 'from/nick'
+        channelManager ! PrivMsg(rec, text, ctx.nick, client)
         empty
       }
     }

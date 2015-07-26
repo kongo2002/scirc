@@ -34,6 +34,9 @@ object Response {
 
   case class StringError(msg: String) extends ErrorNumericReply(0, msg)
 
+  case class ErrorNoSuchNick(nick: String)
+    extends ErrorNumericReply(401, s"$nick :No such nick/channel")
+
   case class ErrorNoSuchChannel(channel: String)
     extends ErrorNumericReply(403, s"$channel :No such channel")
 

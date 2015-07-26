@@ -22,6 +22,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   extends Actor
   with SendActor {
 
+  import ClientActor._
   import ChannelActor._
   import Response._
 
@@ -70,6 +71,15 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       // user is not on the requested channel
       else {
         client.client ! Err(ErrorNotOnChannel(name), client)
+      }
+
+    case PrivMsg(rec, text, from, client) =>
+      // TODO: 'from'
+      val msg = ByteString(s":$from PRIVMSG $name :$text\r\n")
+
+      members.foreach { case (nick, cl) =>
+        if (nick != from)
+          send(msg)(cl)
       }
   }
 }
