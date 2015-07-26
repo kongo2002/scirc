@@ -67,7 +67,7 @@ abstract trait CommandActor extends Actor {
 
   def send(x: String) = sender ! Tcp.Write(ByteString(x))
 
-  def sendTo(to: ActorRef)(x: String) = to ! Tcp.Write(ByteString(x))
+  def sendTo(to: Client)(x: String) = to.socket ! Tcp.Write(ByteString(x))
 
   def process(cmd: String) = {
     val res = handleCommand(cmd) match {

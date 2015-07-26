@@ -6,17 +6,17 @@ import scala.collection.immutable.HashMap
 
 object NickManager {
   // requests
-  case class RegisterNick(nick: String, rec: ActorRef)
-  case class ChangeNick(from: String, to: String, rec: ActorRef)
-  case class NickCount(rec: ActorRef)
+  case class RegisterNick(nick: String, client: Client)
+  case class ChangeNick(from: String, to: String, client: Client)
+  case class NickCount(client: Client)
   case class DisconnectNick(nick: String)
-  case class OnlineNicks(nicks: List[String], rec: ActorRef)
+  case class OnlineNicks(nicks: List[String], client: Client)
 
   // responses
-  case class NickAck(newNick: String, rec: ActorRef)
-  case class NickErr(error: String, rec: ActorRef)
-  case class Nicks(count: Int, rec: ActorRef)
-  case class NicksOnline(nicks: List[String], rec: ActorRef)
+  case class NickAck(newNick: String, client: Client)
+  case class NickErr(error: String, client: Client)
+  case class Nicks(count: Int, client: Client)
+  case class NicksOnline(nicks: List[String], client: Client)
 }
 
 class NickManager extends Actor {

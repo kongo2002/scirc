@@ -14,7 +14,7 @@ object Handlers {
 
     def success(response: String) = Right(StringResponse(response))
 
-    def noop(op: Operation): Response = empty
+    def noop(op: Operation, client: Client): Response = empty
 
     def hostReply(reply: String) =
       success(s":${server.host} $reply")
@@ -25,7 +25,7 @@ object Handlers {
 
     import NickManager._
 
-    def handleNick(op: Operation): Response = {
+    def handleNick(op: Operation, client: Client): Response = {
       val newNick = op.get(0)
       val nick = ctx.nick
 
@@ -33,26 +33,26 @@ object Handlers {
         val isNew = nick == ""
 
         if (isNew)
-          nickManager ! RegisterNick(newNick, sender)
+          nickManager ! RegisterNick(newNick, client)
         else
-          nickManager ! ChangeNick(nick, newNick, sender)
+          nickManager ! ChangeNick(nick, newNick, client)
       }
 
       empty
     }
 
     def nickReceive: Receive = {
-      case NickAck(newNick, rec) =>
+      case NickAck(newNick, client) =>
         ctx.nick = newNick
-      case NickErr(err, rec) =>
-        sendError(StringError(err), sendTo(rec))
+      case NickErr(err, client) =>
+        sendError(StringError(err), sendTo(client))
     }
   }
 
   trait UserHandler extends BaseHandler {
     this: ClientActor =>
 
-    def handleUser(op: Operation): Response = {
+    def handleUser(op: Operation, client: Client): Response = {
       ctx.user = op.get(0)
       ctx.realname = op.get(3)
       ctx.modes = op.getInt(1).getOrElse(0)
@@ -78,21 +78,22 @@ object Handlers {
   trait JoinHandler extends BaseHandler {
     this: ClientActor =>
 
+    import ChannelActor._
     import ChannelManager._
 
-    def handleJoin(op: Operation): Response = {
+    def handleJoin(op: Operation, client: Client): Response = {
       // TODO: handle multiple channels
       // TODO: handle keys
       var channel = op.get(0)
-      channelManager ! ChannelJoin(channel, ctx.nick, sender)
+      channelManager ! ChannelJoin(channel, ctx.nick, client)
       empty
     }
 
     def joinReceive: Receive = {
-      case ChannelJoined(ch, topic, rec) =>
+      case ChannelJoined(ch, topic, client) =>
         topic match {
-          case "" => sendResponse(ReplyNoTopic(ch), sendTo(rec))
-          case _ => sendResponse(ReplyTopic(ch, topic), sendTo(rec))
+          case "" => sendResponse(ReplyNoTopic(ch), sendTo(client))
+          case _ => sendResponse(ReplyTopic(ch, topic), sendTo(client))
         }
     }
   }
@@ -102,8 +103,8 @@ object Handlers {
 
     import NickManager._
 
-    def handleIson(op: Operation): Response = {
-      nickManager ! OnlineNicks(op.args.toList, sender)
+    def handleIson(op: Operation, client: Client): Response = {
+      nickManager ! OnlineNicks(op.args.toList, client)
       empty
     }
 
@@ -116,7 +117,7 @@ object Handlers {
   trait PingHandler extends BaseHandler {
     this: ClientActor =>
 
-    def handlePing(op: Operation): Response = {
+    def handlePing(op: Operation, client: Client): Response = {
       val host = server.host
       hostReply(s"PONG $host :$host")
     }
@@ -128,19 +129,19 @@ object Handlers {
     import ChannelManager._
     import NickManager._
 
-    def disconnect {
+    def disconnect(client: Client) {
       // terminate itself
       context stop self
 
       // unregister nick
-      channelManager ! ChannelJoin("0", ctx.nick, sender)
+      channelManager ! ChannelJoin("0", ctx.nick, client)
       nickManager ! DisconnectNick(ctx.nick)
     }
 
-    def handleQuit(op: Operation): Response = {
+    def handleQuit(op: Operation, client: Client): Response = {
       val msg = op.get(0, "leaving")
 
-      disconnect
+      disconnect(client)
 
       Left(StringError(s"QUIT :$msg"))
     }

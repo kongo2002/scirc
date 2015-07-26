@@ -5,6 +5,8 @@ import akka.io.Tcp
 
 import Handlers._
 
+case class Client(client: ActorRef, socket: ActorRef)
+
 object ClientActor {
   def apply(server: ServerContext, nickManager: ActorRef, channelManager: ActorRef) =
     new ClientActor(server, nickManager, channelManager)
@@ -30,15 +32,18 @@ class ClientActor(val server: ServerContext,
   implicit val ctx = ClientContext(server, "")
 
   def handle(op: Operation): Response = {
-    op.cmd match {
-      case PingCmd => handlePing(op)
-      case NickCmd => handleNick(op)
-      case QuitCmd => handleQuit(op)
-      case UserCmd => handleUser(op)
-      case IsonCmd => handleIson(op)
-      case JoinCmd => handleJoin(op)
-      case PongCmd => noop(op)
+    val client = Client(self, sender)
+    val handler = op.cmd match {
+      case PingCmd => handlePing _
+      case NickCmd => handleNick _
+      case QuitCmd => handleQuit _
+      case UserCmd => handleUser _
+      case IsonCmd => handleIson _
+      case JoinCmd => handleJoin _
+      case PongCmd => noop _
     }
+
+    handler(op, client)
   }
 
   def handleCommand(cmd: String): Response = {
@@ -49,7 +54,7 @@ class ClientActor(val server: ServerContext,
     case Tcp.PeerClosed =>
       println("Connection closed")
 
-      disconnect
+      disconnect(Client(self, sender))
   }
 
   def receive =
