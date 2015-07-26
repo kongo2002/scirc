@@ -25,7 +25,10 @@ class ChannelManager extends Actor {
         c ! UserJoin(nick, client)
       // new channel -> create a new one
       case None =>
-        val newChannel = context.actorOf(Props(ChannelActor(channel, self)))
+        val newChannel = context.actorOf(
+          Props(ChannelActor(channel, self)))
+
+        channels += (channel -> newChannel)
         newChannel ! UserJoin(nick, client)
     }
   }
