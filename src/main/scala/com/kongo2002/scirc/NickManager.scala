@@ -2,7 +2,7 @@ package com.kongo2002.scirc
 
 import akka.actor.{Actor, ActorRef}
 
-import scala.collection.immutable.HashMap
+import scala.collection.mutable.Map
 
 object NickManager {
   // requests
@@ -20,40 +20,40 @@ object NickManager {
 }
 
 class NickManager extends Actor {
-  var nicks = new HashMap[String, ActorRef]
+  var nicks = Map.empty[String, ActorRef]
 
   import NickManager._
 
   def receive: Receive = {
 
-    case ChangeNick(from, to, rec) =>
+    case ChangeNick(from, to, client) =>
       nicks.get(from) match {
         case Some(ref) =>
           val exists = !nicks.get(to).isEmpty
 
           if (exists)
-            sender ! NickErr("already in use", rec)
+            sender ! NickErr("already in use", client)
           else if (sender == ref) {
-            nicks = nicks - from + ((to, sender))
-            sender ! NickAck(to, rec)
+            nicks -= from += (to -> sender)
+            sender ! NickAck(to, client)
           }
           else
-            sender ! NickErr("invalid user", rec)
+            sender ! NickErr("invalid user", client)
         case None =>
-          sender ! NickErr("user does not exist", rec)
+          sender ! NickErr("user does not exist", client)
       }
 
-    case RegisterNick(nick, rec) =>
+    case RegisterNick(nick, client) =>
       val exists = !nicks.get(nick).isEmpty
 
       if (exists)
-        sender ! NickErr("already in use", rec)
+        sender ! NickErr("already in use", client)
       else {
-        nicks = nicks + ((nick, sender))
-        sender ! NickAck(nick, rec)
+        nicks += (nick -> sender)
+        sender ! NickAck(nick, client)
       }
 
-    case OnlineNicks(ns, rec) =>
+    case OnlineNicks(ns, client) =>
       val online = ns.foldLeft(List[String]()) { (xs: List[String], x: String) =>
         nicks.get(x) match {
           case Some(nick) => x :: xs
@@ -62,12 +62,12 @@ class NickManager extends Actor {
       }
 
       if (!online.isEmpty)
-        sender ! NicksOnline(online, rec)
+        sender ! NicksOnline(online, client)
 
     case DisconnectNick(nick) =>
-      nicks = nicks - nick
+      nicks -= nick
 
-    case NickCount(rec) =>
-      sender ! Nicks(nicks.size, rec)
+    case NickCount(client) =>
+      sender ! Nicks(nicks.size, client)
   }
 }
