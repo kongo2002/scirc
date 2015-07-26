@@ -31,6 +31,7 @@ object Commands {
   case object PongCmd extends NoArgCommand("PONG")
   case object NickCmd extends OneArgCommand("NICK")
   case object QuitCmd extends NoArgCommand("QUIT")
+  case object IsonCmd extends OneArgCommand("ISON")
   case object UserCmd extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
@@ -38,6 +39,7 @@ object Commands {
     "PONG" -> PongCmd,
     "NICK" -> NickCmd,
     "USER" -> UserCmd,
+    "ISON" -> IsonCmd,
     "QUIT" -> QuitCmd
   )
 

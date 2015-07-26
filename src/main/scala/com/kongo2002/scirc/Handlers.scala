@@ -75,6 +75,22 @@ object Handlers {
     }
   }
 
+  trait IsonHandler extends BaseHandler {
+    this: ClientActor =>
+
+    import NickManager._
+
+    def handleIson(op: Operation): Response = {
+      nickManager ! OnlineNicks(op.args.toList, sender)
+      empty
+    }
+
+    def isonReceive: Receive = {
+      case NicksOnline(ns, rec) =>
+        sendResponse(ReplyIson(ns.mkString(" ")), (sendTo(rec)))
+    }
+  }
+
   trait PingHandler extends BaseHandler {
     this: ClientActor =>
 

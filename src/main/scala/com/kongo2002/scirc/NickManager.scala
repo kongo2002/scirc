@@ -10,11 +10,13 @@ object NickManager {
   case class ChangeNick(from: String, to: String, rec: ActorRef)
   case class NickCount(rec: ActorRef)
   case class DisconnectNick(nick: String)
+  case class OnlineNicks(nicks: List[String], rec: ActorRef)
 
   // responses
   case class NickAck(newNick: String, rec: ActorRef)
   case class NickErr(error: String, rec: ActorRef)
   case class Nicks(count: Int, rec: ActorRef)
+  case class NicksOnline(nicks: List[String], rec: ActorRef)
 }
 
 class NickManager extends Actor {
@@ -50,6 +52,17 @@ class NickManager extends Actor {
         nicks = nicks + ((nick, sender))
         sender ! NickAck(nick, rec)
       }
+
+    case OnlineNicks(ns, rec) =>
+      val online = ns.foldLeft(List[String]()) { (xs: List[String], x: String) =>
+        nicks.get(x) match {
+          case Some(nick) => x :: xs
+          case None => xs
+        }
+      }
+
+      if (!online.isEmpty)
+        sender ! NicksOnline(online, rec)
 
     case DisconnectNick(nick) =>
       nicks = nicks - nick

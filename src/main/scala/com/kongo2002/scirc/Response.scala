@@ -42,4 +42,7 @@ object Response {
     extends SuccessNumericReply(3, msg)
   case class ReplyMyInfo(msg: String)
     extends SuccessNumericReply(4, msg)
+
+  case class ReplyIson(msg: String)
+    extends SuccessNumericReply(303, msg)
 }

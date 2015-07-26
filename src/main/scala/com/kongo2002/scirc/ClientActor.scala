@@ -15,6 +15,7 @@ class ClientActor(val server: ServerContext, val nickManager: ActorRef)
   with NickHandler
   with PingHandler
   with UserHandler
+  with IsonHandler
   with QuitHandler
   with CommandHandler {
 
@@ -30,6 +31,7 @@ class ClientActor(val server: ServerContext, val nickManager: ActorRef)
       case NickCmd => handleNick(op)
       case QuitCmd => handleQuit(op)
       case UserCmd => handleUser(op)
+      case IsonCmd => handleIson(op)
       case PongCmd => noop(op)
     }
   }
@@ -47,5 +49,9 @@ class ClientActor(val server: ServerContext, val nickManager: ActorRef)
   }
 
   // use HTTP handling of the CommandActor for now
-  def receive = httpReceive orElse nickReceive orElse handleClose
+  def receive =
+    httpReceive orElse
+    nickReceive orElse
+    isonReceive orElse
+    handleClose
 }
