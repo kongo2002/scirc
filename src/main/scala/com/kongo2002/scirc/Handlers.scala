@@ -45,7 +45,7 @@ object Handlers {
       case NickAck(newNick, client) =>
         ctx.nick = newNick
       case NickErr(err, client) =>
-        sendError(StringError(err), sendTo(client))
+        sendError(err, sendTo(client))
     }
   }
 
@@ -90,11 +90,16 @@ object Handlers {
     }
 
     def joinReceive: Receive = {
-      case ChannelJoined(ch, topic, client) =>
+      case ChannelJoined(ch, topic, names, client) =>
         topic match {
           case "" => sendResponse(ReplyNoTopic(ch), sendTo(client))
           case _ => sendResponse(ReplyTopic(ch, topic), sendTo(client))
         }
+
+        // send list of names
+        val nameStr = names.mkString(" ")
+        sendResponse(ReplyChannelNames(ch, nameStr), sendTo(client))
+        sendResponse(ReplyEndOfNames(ch), sendTo(client))
     }
   }
 

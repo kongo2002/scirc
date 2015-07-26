@@ -13,7 +13,7 @@ object ChannelActor {
   case class UserPart(nick: String, client: Client)
 
   // response messages
-  case class ChannelJoined(channel: String, topic: String, client: Client)
+  case class ChannelJoined(channel: String, topic: String, names: List[String], client: Client)
 }
 
 class ChannelActor(name: String, channelManager: ActorRef) extends Actor {
@@ -43,8 +43,10 @@ class ChannelActor(name: String, channelManager: ActorRef) extends Actor {
   def receive: Receive = {
 
     case UserJoin(nick, client) =>
-      if (join(nick, client))
-        sender ! ChannelJoined(name, topic, client)
+      if (join(nick, client)) {
+        val names = members.keys.toList
+        client.client ! ChannelJoined(name, topic, names, client)
+      }
 
     case UserPart(nick, client) =>
       if (part(nick)) {

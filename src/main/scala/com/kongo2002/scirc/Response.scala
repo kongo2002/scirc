@@ -9,7 +9,13 @@ object Response {
     extends SuccessResponse {
 
     def getMessage(implicit ctx: ClientContext) = {
-      "%03d %s %s".format(code, ctx.user, msg)
+      val host = ctx.ctx.host
+      val nick = ctx.nick match {
+        case "" => "*"
+        case n => n
+      }
+
+      ":%s %03d %s %s".format(host, code, nick, msg)
     }
   }
 
@@ -21,6 +27,8 @@ object Response {
 
   case class StringError(msg: String) extends ErrorNumericReply(0, msg)
 
+  case class ErrorNickAlreadyInUse(nick: String)
+    extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 
@@ -49,4 +57,9 @@ object Response {
     extends SuccessNumericReply(331, s"$channel :No topic is set")
   case class ReplyTopic(channel: String, topic: String)
     extends SuccessNumericReply(332, s"$channel :$topic")
+  // TODO: channel type
+  case class ReplyChannelNames(channel: String, names: String)
+    extends SuccessNumericReply(353, s"= $channel :$names")
+  case class ReplyEndOfNames(channel: String)
+    extends SuccessNumericReply(366, s"$channel :End of NAMES list")
 }

@@ -4,6 +4,8 @@ import akka.actor.{Actor, ActorRef}
 
 import scala.collection.mutable.Map
 
+import Response._
+
 object NickManager {
   // requests
   case class RegisterNick(nick: String, client: Client)
@@ -14,7 +16,7 @@ object NickManager {
 
   // responses
   case class NickAck(newNick: String, client: Client)
-  case class NickErr(error: String, client: Client)
+  case class NickErr(error: ErrorResponse, client: Client)
   case class Nicks(count: Int, client: Client)
   case class NicksOnline(nicks: List[String], client: Client)
 }
@@ -32,22 +34,22 @@ class NickManager extends Actor {
           val exists = !nicks.get(to).isEmpty
 
           if (exists)
-            sender ! NickErr("already in use", client)
+            sender ! NickErr(ErrorNickAlreadyInUse(to), client)
           else if (sender == ref) {
             nicks -= from += (to -> sender)
             sender ! NickAck(to, client)
           }
           else
-            sender ! NickErr("invalid user", client)
+            sender ! NickErr(StringError("invalid user"), client)
         case None =>
-          sender ! NickErr("user does not exist", client)
+          sender ! NickErr(StringError("user does not exist"), client)
       }
 
     case RegisterNick(nick, client) =>
       val exists = !nicks.get(nick).isEmpty
 
       if (exists)
-        sender ! NickErr("already in use", client)
+        sender ! NickErr(ErrorNickAlreadyInUse(nick), client)
       else {
         nicks += (nick -> sender)
         sender ! NickAck(nick, client)
