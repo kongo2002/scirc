@@ -40,6 +40,9 @@ object Response {
   case class ErrorNoSuchChannel(channel: String)
     extends ErrorNumericReply(403, s"$channel :No such channel")
 
+  case class ErrorCannotSendToChannel(channel: String)
+    extends ErrorNumericReply(404, s"$channel :Cannot send to channel")
+
   case class ErrorNoRecipient(cmd: String)
     extends ErrorNumericReply(411, s":No recipient given ($cmd)")
 

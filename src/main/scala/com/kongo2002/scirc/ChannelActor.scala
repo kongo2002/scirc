@@ -52,6 +52,8 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     members.values.foreach (send(bytes))
   }
 
+  def partOf(nick: String) = !members.get(nick).isEmpty
+
   def receive: Receive = {
 
     case UserJoin(nick, client) =>
@@ -61,12 +63,12 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         client.client ! ChannelJoined(name, topic, names, client)
 
         // notify all members of member join
-        toAll(s":$nick!$nick@${server.host} JOIN $name\r\n")
+        toAll(s":${client.ctx.prefix} JOIN $name\r\n")
       }
 
     case UserPart(nick, reason, client) =>
       if (part(nick)) {
-        toAll(s":$nick!$nick@${server.host} PART $name :$reason\r\n")
+        toAll(s":${client.ctx.prefix} PART $name :$reason\r\n")
       }
       // user is not on the requested channel
       else {
@@ -74,12 +76,19 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       }
 
     case PrivMsg(rec, text, from, client) =>
-      // TODO: 'from'
-      val msg = ByteString(s":$from PRIVMSG $name :$text\r\n")
+      // check if the user is part of the channel
+      if (partOf(from)) {
+        val msg = ByteString(s":$from PRIVMSG $name :$text\r\n")
 
-      members.foreach { case (nick, cl) =>
-        if (nick != from)
-          send(msg)(cl)
+        members.foreach { case (nick, cl) =>
+          if (client != cl)
+            send(msg)(cl)
+        }
+      }
+      // user is not allowed to send on this channel
+      else {
+        // TODO: or 401?
+        client.client ! Err(ErrorCannotSendToChannel(name), client)
       }
   }
 }

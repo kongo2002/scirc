@@ -24,9 +24,9 @@ class Server(listen: URI, hostname: String) extends Actor {
   }
 
   def receive: Receive = LoggingReceive {
-    case Tcp.Connected(_, _) =>
+    case Tcp.Connected(rem, _) =>
       sender ! Tcp.Register(context.actorOf(
-        Props(ClientActor(ctx, nickManager, channelManager))))
+        Props(ClientActor(ctx, rem, nickManager, channelManager))))
   }
 }
 

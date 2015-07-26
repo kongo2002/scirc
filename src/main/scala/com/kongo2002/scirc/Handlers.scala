@@ -63,7 +63,6 @@ object Handlers {
       else if (text == "")
         Left(ErrorNoTextToSend)
       else {
-        // TODO: 'from/nick'
         channelManager ! PrivMsg(rec, text, ctx.nick, client)
         empty
       }
