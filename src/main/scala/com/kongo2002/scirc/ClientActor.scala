@@ -6,11 +6,13 @@ import akka.io.Tcp
 import Handlers._
 
 object ClientActor {
-  def apply(server: ServerContext, nickManager: ActorRef) =
-    new ClientActor(server, nickManager)
+  def apply(server: ServerContext, nickManager: ActorRef, channelManager: ActorRef) =
+    new ClientActor(server, nickManager, channelManager)
 }
 
-class ClientActor(val server: ServerContext, val nickManager: ActorRef)
+class ClientActor(val server: ServerContext,
+    val nickManager: ActorRef,
+    val channelmanager: ActorRef)
   extends CommandActor
   with NickHandler
   with PingHandler

@@ -14,16 +14,19 @@ class Server(listen: URI, hostname: String) extends Actor {
   val ctx = ServerContext(hostname, 0)
 
   var nickManager = context.system.deadLetters
+  var channelManager = context.system.deadLetters
 
   IO(Tcp)(context.system) ! Tcp.Bind(self, new InetSocketAddress(host, port))
 
   override def preStart = {
     nickManager = context.actorOf(Props[NickManager], "nickmanager")
+    channelManager = context.actorOf(Props[ChannelManager], "channelmanager")
   }
 
   def receive: Receive = LoggingReceive {
     case Tcp.Connected(_, _) =>
-      sender ! Tcp.Register(context.actorOf(Props(ClientActor(ctx, nickManager))))
+      sender ! Tcp.Register(context.actorOf(
+        Props(ClientActor(ctx, nickManager, channelManager))))
   }
 }
 
