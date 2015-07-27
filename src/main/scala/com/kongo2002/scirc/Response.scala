@@ -104,6 +104,10 @@ object Response {
   case class ReplyEndOfWhoIsList(nick: String)
     extends SuccessNumericReply(318, s"$nick :End of WHOIS list")
 
+  // TODO: mode parameters
+  case class ReplyChannelModeIs(channel: String, modes: String)
+    extends SuccessNumericReply(324, s"$channel $modes")
+
   case class ReplyNoTopic(channel: String)
     extends SuccessNumericReply(331, s"$channel :No topic is set")
 

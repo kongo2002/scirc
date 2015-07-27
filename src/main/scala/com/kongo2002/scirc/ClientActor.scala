@@ -99,6 +99,7 @@ class ClientActor(val server: ServerContext,
     joinReceive  orElse
     userReceive  orElse
     nickReceive  orElse
+    modeReceive  orElse
     isonReceive  orElse
     whoisReceive orElse
     handleError  orElse

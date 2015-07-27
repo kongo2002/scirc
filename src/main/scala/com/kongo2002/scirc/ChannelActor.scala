@@ -13,6 +13,7 @@ object ChannelActor {
   // request messages
   case class UserJoin(nick: String, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
+  case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
 
   // response messages
