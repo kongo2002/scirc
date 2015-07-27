@@ -39,6 +39,26 @@ class ClientActor(val server: ServerContext,
   val remoteHost = remote.getHostString()
   implicit val ctx = ClientContext(server, remoteHost, "")
 
+  def isRegistered = ctx.nick != "" && ctx.user != ""
+
+  def sendWelcome = {
+    // TODO: version
+    val version = "scirc-0.1"
+    val host = server.host
+    val nick = ctx.nick
+    val df = java.text.DateFormat.getDateInstance()
+    val tz = java.util.TimeZone.getTimeZone("UTC")
+    val time = df.format(server.created)
+
+    ListResponse(List(
+      ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
+      ReplyYourHost(s"Your host is $host, running version $version"),
+      ReplyCreated(s"This server was created $time"),
+      // TODO: modes
+      ReplyMyInfo(s"$host $version o o")
+      ))
+  }
+
   def handle(op: Operation): Response = {
     val client = Client(self, sender, ctx)
     val handler = op.cmd match {

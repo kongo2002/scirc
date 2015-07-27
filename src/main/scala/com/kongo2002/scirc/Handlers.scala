@@ -1,7 +1,10 @@
 package com.kongo2002.scirc
 
 import akka.actor.Actor
-import akka.util.ByteString
+import akka.util.{ByteString, Timeout}
+import akka.pattern.ask
+
+import scala.concurrent.duration._
 
 import Response._
 
@@ -32,10 +35,29 @@ object Handlers {
       if (nick != newNick) {
         val isNew = nick == ""
 
-        if (isNew)
-          nickManager ! RegisterNick(newNick, client)
-        else
-          nickManager ! ChangeNick(nick, newNick, client)
+        val msg =
+          if (isNew)
+            RegisterNick(newNick, client)
+          else
+            ChangeNick(nick, newNick, client)
+
+        implicit val ec = context.dispatcher
+        implicit val timeout = Timeout(1.seconds)
+
+        // TODO: handle timeout
+        val res = nickManager ? msg map {
+          case NickAck(newNick, client) =>
+            // update to new nick
+            // TODO: notify
+            ctx.nick = newNick
+
+            // if this is a new nick this is probably the registration phase
+            // but it could be a second try caused by a duplicate nick name
+            if (isNew && isRegistered)
+              sendResponse(sendWelcome, sendTo(client))
+          case NickErr(err, client) =>
+            sendError(err, sendTo(client))
+        }
       }
 
       empty
@@ -77,21 +99,10 @@ object Handlers {
       ctx.realname = op.get(3)
       ctx.modes = op.getInt(1).getOrElse(0)
 
-      // TODO: version
-      val version = "scirc-0.1"
-      val host = server.host
-      val nick = ctx.nick
-      val df = java.text.DateFormat.getDateInstance()
-      val tz = java.util.TimeZone.getTimeZone("UTC")
-      val time = df.format(server.created)
-
-      Right(ListResponse(List(
-        ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
-        ReplyYourHost(s"Your host is $host, running version $version"),
-        ReplyCreated(s"This server was created $time"),
-        // TODO: modes
-        ReplyMyInfo(s"$host $version o o")
-        )))
+      if (isRegistered)
+        Right(sendWelcome)
+      else
+        empty
     }
   }
 
