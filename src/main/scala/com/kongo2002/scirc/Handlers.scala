@@ -82,8 +82,10 @@ object Handlers {
       if (target == ctx.nick) {
         // set modes if given
         if (mode != "") {
-          log.debug(s"${ctx.nick}: trying to apply modes: $mode")
-          ctx.modes.applyMode(mode)
+          log.debug(s"${ctx.nick}: MODE request '$mode'")
+
+          if (ctx.modes.applyMode(mode))
+            log.debug(s"${ctx.nick}: new MODE set '${ctx.modes.modeString}'")
         }
 
         Right(ReplyUserModeIs(ctx.modes))

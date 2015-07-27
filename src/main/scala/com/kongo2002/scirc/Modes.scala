@@ -36,16 +36,20 @@ object Modes {
       }
     }
 
+    private def anyChange[A](seq: Seq[A], func: A => Boolean): Boolean = {
+      seq.foldLeft(false) { (acc, x) => func(x) || acc }
+    }
+
     def modeString: String = map(_.chr).mkString
 
     def setMode(chr: Char): Boolean = modifyMode(add(_), chr)
 
     def unsetMode(chr: Char): Boolean = modifyMode(remove(_), chr)
 
-    def applyMode(mode: String) = mode.toSeq match {
-      case Seq('+', m@_*) => m.foreach(setMode _)
-      case Seq('-', m@_*) => m.foreach(unsetMode _)
-      case _ =>
+    def applyMode(mode: String): Boolean = mode.toSeq match {
+      case Seq('+', m@_*) => anyChange(m, setMode _)
+      case Seq('-', m@_*) => anyChange(m, unsetMode _)
+      case _ => false
     }
   }
 }
