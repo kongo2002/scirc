@@ -39,9 +39,7 @@ class ClientActor(val server: ServerContext,
   val remoteHost = remote.getHostString()
   implicit val ctx = ClientContext(server, remoteHost, "")
 
-  def isRegistered = ctx.nick != "" && ctx.user != ""
-
-  def sendWelcome = {
+  def welcome = {
     // TODO: version
     val version = "scirc-0.1"
     val host = server.host
@@ -94,9 +92,9 @@ class ClientActor(val server: ServerContext,
 
   def receive =
     httpReceive orElse
-    nickReceive orElse
-    isonReceive orElse
     joinReceive orElse
+    userReceive orElse
+    isonReceive orElse
     handleError orElse
     handleClose
 }

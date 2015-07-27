@@ -13,6 +13,7 @@ object NickManager {
   case class NickCount(client: Client)
   case class DisconnectNick(nick: String)
   case class OnlineNicks(nicks: List[String], client: Client)
+  case class Registered(client: Client)
 
   // responses
   case class NickAck(newNick: String, client: Client)

@@ -8,6 +8,7 @@ case class ClientContext(ctx: ServerContext, host: String, var nick: String) {
   var user = ""
   var realname = ""
   var modes = 0
+  var isRegistered = false
 
   def prefix = s"$nick!$user@$host"
 }

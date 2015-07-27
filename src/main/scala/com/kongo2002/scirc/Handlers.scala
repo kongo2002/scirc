@@ -53,21 +53,14 @@ object Handlers {
 
             // if this is a new nick this is probably the registration phase
             // but it could be a second try caused by a duplicate nick name
-            if (isNew && isRegistered)
-              sendResponse(sendWelcome, sendTo(client))
+            if (isNew)
+              self ! Registered(client)
           case NickErr(err, client) =>
             sendError(err, sendTo(client))
         }
       }
 
       empty
-    }
-
-    def nickReceive: Receive = {
-      case NickAck(newNick, client) =>
-        ctx.nick = newNick
-      case NickErr(err, client) =>
-        sendError(err, sendTo(client))
     }
   }
 
@@ -94,15 +87,24 @@ object Handlers {
   trait UserHandler extends BaseHandler {
     this: ClientActor =>
 
+    import NickManager._
+
     def handleUser(op: Operation, client: Client): Response = {
       ctx.user = op.get(0)
       ctx.realname = op.get(3)
       ctx.modes = op.getInt(1).getOrElse(0)
 
-      if (isRegistered)
-        Right(sendWelcome)
-      else
-        empty
+      self ! Registered(client)
+
+      empty
+    }
+
+    def userReceive: Receive = {
+      case Registered(client) =>
+        if (!ctx.isRegistered && ctx.nick != "" && ctx.user != "") {
+          ctx.isRegistered = true
+          sendResponse(welcome, sendTo(client))
+        }
     }
   }
 
