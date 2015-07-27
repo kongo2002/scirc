@@ -94,6 +94,7 @@ class ClientActor(val server: ServerContext,
     httpReceive orElse
     joinReceive orElse
     userReceive orElse
+    nickReceive orElse
     isonReceive orElse
     handleError orElse
     handleClose

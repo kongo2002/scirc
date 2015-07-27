@@ -35,32 +35,29 @@ object Handlers {
       if (nick != newNick) {
         val isNew = nick == ""
 
-        val msg =
-          if (isNew)
-            RegisterNick(newNick, client)
-          else
-            ChangeNick(nick, newNick, client)
-
-        implicit val ec = context.dispatcher
-        implicit val timeout = Timeout(1.seconds)
-
-        // TODO: handle timeout
-        val res = nickManager ? msg map {
-          case NickAck(newNick, client) =>
-            // update to new nick
-            // TODO: notify
-            ctx.nick = newNick
-
-            // if this is a new nick this is probably the registration phase
-            // but it could be a second try caused by a duplicate nick name
-            if (isNew)
-              self ! Registered(client)
-          case NickErr(err, client) =>
-            sendError(err, sendTo(client))
-        }
+        if (isNew)
+          nickManager ! RegisterNick(newNick, client)
+        else
+          nickManager ! ChangeNick(nick, newNick, client)
       }
 
       empty
+    }
+
+    def nickReceive: Receive = {
+      case NickAck(newNick, client) =>
+        val isNew = ctx.nick == ""
+
+        // update to new nick
+        // TODO: notify
+        ctx.nick = newNick
+
+        // if this is a new nick this is probably the registration phase
+        // but it could be a second try caused by a duplicate nick name
+        if (isNew)
+          self ! Registered(client)
+      case NickErr(err, client) =>
+        sendError(err, sendTo(client))
     }
   }
 
