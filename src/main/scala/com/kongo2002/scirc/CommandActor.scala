@@ -25,6 +25,11 @@ abstract trait CommandActor extends Actor {
         idx = to + crlf.size
         Some(cmd.stripLineEnd)
       }
+      // empty line
+      else if (to == 0) {
+        buffer.delete(0, crlf.size)
+        Some("")
+      }
       else {
         None
       }
@@ -32,6 +37,7 @@ abstract trait CommandActor extends Actor {
 
     def parse: List[String] = {
       next match {
+        case Some("") => parse
         case Some(cmd) => cmd :: parse
         case None =>
           // nothing more to match (so far)
