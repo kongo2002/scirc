@@ -9,7 +9,7 @@ case class ClientContext(ctx: ServerContext, host: String, var nick: String) {
   var realname = ""
   var isRegistered = false
 
-  val modes = new Modes.ModeSet
+  val modes = new Modes.UserModeSet
 
   def prefix = s"$nick!$user@$host"
 }

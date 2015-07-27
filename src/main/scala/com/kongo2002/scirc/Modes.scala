@@ -5,29 +5,71 @@ object Modes {
 
   sealed abstract class IrcMode(val chr: Char)
 
+  // USER MODES
+
   case object AwayMode            extends IrcMode('a')
   case object InvisibleMode       extends IrcMode('i')
   case object WallOpsMode         extends IrcMode('w')
   case object RestrictedMode      extends IrcMode('r')
   case object OperatorMode        extends IrcMode('o')
+  // 'channel creator' flag
   case object LocalOperatorMode   extends IrcMode('O')
   case object ServerRecipientMode extends IrcMode('s')
+  case object VoiceMode           extends IrcMode('v')
 
-  val modes = Seq(
+  // CHANNEL RELATED MODES
+
+  case object AnonymousMode         extends IrcMode('a')
+  case object InviteOnlyMode        extends IrcMode('i')
+  case object ModeratedMode         extends IrcMode('m')
+  case object NoOutsideMessageMode  extends IrcMode('n')
+  case object QuietMode             extends IrcMode('q')
+  case object PrivateMode           extends IrcMode('p')
+  case object SecretMode            extends IrcMode('s')
+  case object ServerReopMode        extends IrcMode('r')
+  case object OperatorTopicOnlyMode extends IrcMode('t')
+  case object ChannelKeyMode        extends IrcMode('k')
+  case object UserLimitMode         extends IrcMode('l')
+  case object BanMaskMode           extends IrcMode('b')
+  case object ExceptionMaskMode     extends IrcMode('e')
+  case object InvitationMaskMode    extends IrcMode('I')
+
+  private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
+    modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
+      map + ((x.chr, x))
+    }
+  }
+
+  val userModes = toMap(Seq(
     AwayMode,
     InvisibleMode,
     WallOpsMode,
     RestrictedMode,
     OperatorMode,
     LocalOperatorMode,
-    ServerRecipientMode)
-      .foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
-        map + ((x.chr, x))
-      }
+    VoiceMode,
+    ServerRecipientMode
+  ))
 
-  def getMode(chr: Char) = modes.get _
+  val channelModes = toMap(Seq(
+    AnonymousMode,
+    InviteOnlyMode,
+    ModeratedMode,
+    NoOutsideMessageMode,
+    QuietMode,
+    PrivateMode,
+    SecretMode,
+    ServerReopMode,
+    OperatorTopicOnlyMode,
+    ChannelKeyMode,
+    UserLimitMode,
+    BanMaskMode,
+    ExceptionMaskMode,
+    InvitationMaskMode
+  ))
 
-  class ModeSet extends HashSet[IrcMode] {
+  abstract class ModeSet extends HashSet[IrcMode] {
+    val modes: Map[Char, IrcMode]
 
     private def modifyMode(func: IrcMode => Boolean, chr: Char): Boolean = {
       modes.get(chr) match {
@@ -51,5 +93,13 @@ object Modes {
       case Seq('-', m@_*) => anyChange(m, unsetMode _)
       case _ => false
     }
+  }
+
+  class UserModeSet extends ModeSet {
+    val modes = userModes
+  }
+
+  class ChannelModeSet extends ModeSet {
+    val modes = channelModes
   }
 }
