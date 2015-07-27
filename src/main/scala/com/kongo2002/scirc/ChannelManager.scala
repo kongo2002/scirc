@@ -71,6 +71,15 @@ class ChannelManager(server: ServerContext)
     }
   }
 
+  private def withChannel(channel: String, client: Client)(handler: ActorRef => Unit) {
+    getChannel(channel) match {
+      case Some(c) =>
+        handler(c)
+      case None =>
+        client.client ! Err(ErrorNoSuchChannel(channel), client)
+    }
+  }
+
   def receive: Receive = {
 
     case ChannelJoin(channel, nick, client) =>
@@ -80,20 +89,13 @@ class ChannelManager(server: ServerContext)
         join(channel, nick, client)
 
     case ChannelPart(channel, nick, reason, client) =>
-      getChannel(channel) match {
-        case Some(c) =>
-          c ! UserPart(nick, reason, client)
-        case None =>
-          client.client ! Err(ErrorNoSuchChannel(channel), client)
-      }
+      withChannel(channel, client) { c => c ! UserPart(nick, reason, client) }
 
     case msg@GetChannelModes(channel, client) =>
-      getChannel(channel) match {
-        case Some(c) =>
-          c forward msg
-        case None =>
-          client.client ! Err(ErrorNoSuchChannel(channel), client)
-      }
+      withChannel(channel, client) { c => c forward msg }
+
+    case msg@SetChannelModes(channel, _, client) =>
+      withChannel(channel, client) { c => c forward msg }
 
     case msg@ChangeNick(_, _, _) =>
       channels.values.foreach { c =>

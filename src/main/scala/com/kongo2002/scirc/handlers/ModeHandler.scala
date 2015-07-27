@@ -27,7 +27,14 @@ trait ModeHandler extends BaseHandler {
   }
 
   private def channelMode(channel: String, op: Operation, client: Client): Response = {
-    channelManager ! GetChannelModes(channel, client)
+    val mode = op.get(1)
+
+    if (mode != "") {
+      val args = op.args.drop(1)
+      channelManager ! SetChannelModes(channel, args, client)
+    } else {
+      channelManager ! GetChannelModes(channel, client)
+    }
     empty
   }
 
