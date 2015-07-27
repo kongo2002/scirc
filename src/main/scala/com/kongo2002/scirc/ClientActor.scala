@@ -1,11 +1,11 @@
 package com.kongo2002.scirc
 
+import com.kongo2002.scirc.handlers._
+
 import akka.actor.{Actor, ActorRef}
 import akka.io.Tcp
 
 import java.net.InetSocketAddress
-
-import Handlers._
 
 case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext)
 

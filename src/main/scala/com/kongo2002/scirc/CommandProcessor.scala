@@ -9,6 +9,11 @@ import scala.util.{Try, Success, Failure}
 
 import Response._
 
+abstract trait CommandHandler {
+  def handleCommand(cmd: String): Response
+  implicit val ctx: ClientContext
+}
+
 abstract trait CommandProcessor extends Actor with ActorLogging {
   this: CommandHandler =>
 
