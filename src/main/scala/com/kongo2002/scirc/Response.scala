@@ -83,6 +83,15 @@ object Response {
   case class ReplyIson(msg: String)
     extends SuccessNumericReply(303, msg)
 
+  case class ReplyWhoIsUser(nick: String, user: String, host: String, realname: String)
+    extends SuccessNumericReply(311, s"$nick $user $host * :$realname")
+
+  case class ReplyWhoIsServer(nick: String, server: String, info: String)
+    extends SuccessNumericReply(312, s"$nick $server :$info")
+
+  case class ReplyEndOfWhoIsList(nick: String)
+    extends SuccessNumericReply(318, s"$nick :End of WHOIS list")
+
   case class ReplyNoTopic(channel: String)
     extends SuccessNumericReply(331, s"$channel :No topic is set")
 

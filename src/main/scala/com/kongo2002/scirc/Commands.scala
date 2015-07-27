@@ -35,6 +35,7 @@ object Commands {
   case object JoinCmd extends OneArgCommand("JOIN")
   case object PartCmd extends OneArgCommand("PART")
   case object PrivMsgCmd extends NoArgCommand("PRIVMSG")
+  case object WhoIsCmd extends OneArgCommand("WHOIS")
   case object UserCmd extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
@@ -46,6 +47,7 @@ object Commands {
     "JOIN"    -> JoinCmd,
     "PART"    -> PartCmd,
     "PRIVMSG" -> PrivMsgCmd,
+    "WHOIS"   -> WhoIsCmd,
     "QUIT"    -> QuitCmd
   )
 

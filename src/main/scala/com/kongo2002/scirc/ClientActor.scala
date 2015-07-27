@@ -28,6 +28,7 @@ class ClientActor(val server: ServerContext,
   with JoinHandler
   with QuitHandler
   with PartHandler
+  with WhoIsHandler
   with PrivMsgHandler
   with CommandHandler {
 
@@ -69,6 +70,7 @@ class ClientActor(val server: ServerContext,
       case JoinCmd    => handleJoin _
       case PartCmd    => handlePart _
       case PrivMsgCmd => handlePrivMsg _
+      case WhoIsCmd   => handleWhois _
       case PongCmd    => noop _
     }
 
@@ -91,11 +93,12 @@ class ClientActor(val server: ServerContext,
   }
 
   def receive =
-    httpReceive orElse
-    joinReceive orElse
-    userReceive orElse
-    nickReceive orElse
-    isonReceive orElse
-    handleError orElse
+    httpReceive  orElse
+    joinReceive  orElse
+    userReceive  orElse
+    nickReceive  orElse
+    isonReceive  orElse
+    whoisReceive orElse
+    handleError  orElse
     handleClose
 }

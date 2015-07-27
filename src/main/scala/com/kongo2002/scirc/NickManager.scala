@@ -14,6 +14,8 @@ object NickManager {
   case class DisconnectNick(nick: String)
   case class OnlineNicks(nicks: List[String], client: Client)
   case class Registered(client: Client)
+  case class WhoIs(client: Client)
+  case class WhoIsNicks(nicks: Array[String], client: Client)
 
   // responses
   case class NickAck(newNick: String, client: Client)
@@ -22,10 +24,21 @@ object NickManager {
   case class NicksOnline(nicks: List[String], client: Client)
 }
 
-class NickManager extends Actor with ActorLogging {
+class NickManager extends Actor with ActorLogging with SendActor {
   var nicks = Map.empty[String, ActorRef]
 
   import NickManager._
+
+  def whois(nick: String, client: Client) = {
+    nicks.get(nick) match {
+      case Some(ref) =>
+        // request WHOIS information of respective client
+        ref ! WhoIs(client)
+      case None =>
+        // specified nick does not exist
+        sender ! Err(ErrorNoSuchNick(nick), client)
+    }
+  }
 
   def receive: Receive = {
 
@@ -70,6 +83,9 @@ class NickManager extends Actor with ActorLogging {
 
       if (!online.isEmpty)
         sender ! NicksOnline(online, client)
+
+    case WhoIsNicks(ns, client) =>
+      ns.foreach (n => whois(n, client))
 
     case DisconnectNick(nick) =>
       nicks -= nick
