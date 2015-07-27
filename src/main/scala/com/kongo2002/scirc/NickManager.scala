@@ -1,6 +1,6 @@
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, ActorLogging}
 
 import scala.collection.mutable.Map
 
@@ -22,7 +22,7 @@ object NickManager {
   case class NicksOnline(nicks: List[String], client: Client)
 }
 
-class NickManager extends Actor {
+class NickManager extends Actor with ActorLogging {
   var nicks = Map.empty[String, ActorRef]
 
   import NickManager._
@@ -39,6 +39,8 @@ class NickManager extends Actor {
           else if (sender == ref) {
             nicks -= from += (to -> sender)
             sender ! NickAck(to, client)
+
+            log.info(s"changed nick from '$from' to '$to'")
           }
           else
             sender ! NickErr(StringError("invalid user"), client)
@@ -54,6 +56,8 @@ class NickManager extends Actor {
       else {
         nicks += (nick -> sender)
         sender ! NickAck(nick, client)
+
+        log.info(s"registered nick '$nick'")
       }
 
     case OnlineNicks(ns, client) =>

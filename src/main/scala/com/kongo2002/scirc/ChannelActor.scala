@@ -1,6 +1,6 @@
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, ActorLogging}
 import akka.io.Tcp
 import akka.util.ByteString
 
@@ -20,10 +20,12 @@ object ChannelActor {
 
 class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext)
   extends Actor
+  with ActorLogging
   with SendActor {
 
   import ClientActor._
   import ChannelActor._
+  import NickManager._
   import Response._
 
   var topic = ""
@@ -81,7 +83,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         val msg = ByteString(s":$from PRIVMSG $name :$text\r\n")
 
         members.foreach { case (nick, cl) =>
-          if (client != cl)
+          if (nick != client.ctx.nick)
             send(msg)(cl)
         }
       }
@@ -89,6 +91,24 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       else {
         // TODO: or 401?
         client.client ! Err(ErrorCannotSendToChannel(name), client)
+      }
+
+    case ChangeNick(oldNick, newNick, client) =>
+      members.get(oldNick) match {
+        case Some(c) =>
+          val from = s"$oldNick!${client.ctx.user}@${client.ctx.host}"
+          val msg = ByteString(s":$from NICK $newNick\r\n")
+
+          // send notification to participating channels first
+          members.foreach { case (nick, cl) =>
+            if (nick != oldNick)
+              send(msg)(cl)
+          }
+
+          // change nick in members
+          members -= oldNick
+          members += (newNick -> c)
+        case None =>
       }
   }
 }

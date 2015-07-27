@@ -20,6 +20,7 @@ class ChannelManager(server: ServerContext)
   import ChannelActor._
   import ChannelManager._
   import ClientActor._
+  import NickManager._
   import Response._
 
   val channels = Map.empty[String, ActorRef]
@@ -61,6 +62,11 @@ class ChannelManager(server: ServerContext)
           c ! UserPart(nick, reason, client)
         case None =>
           client.client ! Err(ErrorNoSuchChannel(channel), client)
+      }
+
+    case msg@ChangeNick(_, _, _) =>
+      channels.values.foreach { c =>
+        c forward msg
       }
 
     case msg@PrivMsg(rec, _, _, _) =>

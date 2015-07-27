@@ -46,16 +46,25 @@ object Handlers {
 
     def nickReceive: Receive = {
       case NickAck(newNick, client) =>
-        val isNew = ctx.nick == ""
+        val oldNick = ctx.nick
+        val isNew = oldNick == ""
 
         // update to new nick
-        // TODO: notify
         ctx.nick = newNick
 
         // if this is a new nick this is probably the registration phase
         // but it could be a second try caused by a duplicate nick name
         if (isNew)
           self ! Registered(client)
+        else {
+          // notify client itself
+          val msg = s":$oldNick!${ctx.user}@${ctx.host} NICK $newNick"
+          sendResponse(StringResponse(msg), sendTo(client))
+
+          // notify channels
+          channelManager ! ChangeNick(oldNick, newNick, client)
+        }
+
       case NickErr(err, client) =>
         sendError(err, sendTo(client))
     }
