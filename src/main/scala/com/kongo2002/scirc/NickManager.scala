@@ -3,10 +3,21 @@ package com.kongo2002.scirc
 import akka.actor.{Actor, ActorRef, ActorLogging}
 
 import scala.collection.mutable.Map
+import scala.util.matching.Regex
 
 import Response._
 
 object NickManager {
+  // TODO: this regex is not 100% accurate
+  val valid = new Regex("""[^&#!+][-_a-zA-Z0-9]+]""")
+
+  def isValidNick(nick: String): Boolean = {
+    nick match {
+      case valid(_*) => true
+      case _ => false
+    }
+  }
+
   // requests
   case class RegisterNick(nick: String, client: Client)
   case class ChangeNick(from: String, to: String, client: Client)

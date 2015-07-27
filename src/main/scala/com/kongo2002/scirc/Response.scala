@@ -58,6 +58,9 @@ object Response {
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 
+  case class ErrorBadChannelMask(channel: String)
+    extends ErrorNumericReply(476, s"$channel :Bad Channel Mask")
+
   case object ErrorUsersDontMatch
     extends ErrorNumericReply(502, ":Cannot change mode for other users")
 

@@ -3,10 +3,21 @@ package com.kongo2002.scirc
 import akka.actor.{Actor, ActorRef, Props}
 
 import scala.collection.mutable.Map
+import scala.util.matching.Regex
 
 object ChannelManager {
   def apply(server: ServerContext) =
     new ChannelManager(server)
+
+  // TODO: this regex is not 100% accurate
+  val valid = new Regex("""[&#!+][&#!+]*[a-zA-Z0-9]+""")
+
+  def isValidChannel(channel: String): Boolean = {
+    channel match {
+      case valid(_*) => true
+      case _ => false
+    }
+  }
 
   // request messages
   case class ChannelJoin(channel: String, nick: String, client: Client)
@@ -27,18 +38,30 @@ class ChannelManager(server: ServerContext)
 
   // TODO: import persisted/saved channels
 
+  private def getChannel(channel: String): Option[ActorRef] = {
+    // channel names are case-insensitive
+    val ch = channel.toLowerCase
+    channels.get(ch)
+  }
+
   def join(channel: String, nick: String, client: Client) = {
-    channels.get(channel) match {
+    getChannel(channel) match {
       // channel already exists -> just join
       case Some(c) =>
         c ! UserJoin(nick, client)
       // new channel -> create a new one
       case None =>
-        val newChannel = context.actorOf(
-          Props(ChannelActor(channel, self, server)))
+        val channelName = channel.toLowerCase
 
-        channels += (channel -> newChannel)
-        newChannel ! UserJoin(nick, client)
+        if (isValidChannel(channelName)) {
+          val newChannel = context.actorOf(
+            Props(ChannelActor(channelName, self, server)))
+
+          channels += (channelName -> newChannel)
+          newChannel ! UserJoin(nick, client)
+        } else {
+          client.client ! Err(ErrorBadChannelMask(channel), client)
+        }
     }
   }
 
@@ -57,7 +80,7 @@ class ChannelManager(server: ServerContext)
         join(channel, nick, client)
 
     case ChannelPart(channel, nick, reason, client) =>
-      channels.get(channel) match {
+      getChannel(channel) match {
         case Some(c) =>
           c ! UserPart(nick, reason, client)
         case None =>
@@ -70,7 +93,7 @@ class ChannelManager(server: ServerContext)
       }
 
     case msg@PrivMsg(rec, _, _, _) =>
-      channels.get(rec) match {
+      getChannel(rec) match {
         case Some(channel) =>
           channel forward msg
         case None =>
