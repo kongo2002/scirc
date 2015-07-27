@@ -88,6 +88,10 @@ object Modes {
 
     def unsetMode(chr: Char): Boolean = modifyMode(remove(_), chr)
 
+    def isSet(chr: Char): Boolean = exists(mode => mode.chr == chr)
+
+    def isSet(mode: IrcMode): Boolean = contains(mode)
+
     def applyMode(mode: String): Boolean = mode.toSeq match {
       case Seq('+', m@_*) => anyChange(m, setMode _)
       case Seq('-', m@_*) => anyChange(m, unsetMode _)
