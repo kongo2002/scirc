@@ -74,8 +74,10 @@ class NickManager extends Actor with ActorLogging with SendActor {
             }
           }
           else
+            // TODO: use correct numeric reply
             sender ! NickErr(StringError("invalid user"), client)
         case None =>
+          // TODO: use correct numeric reply
           sender ! NickErr(StringError("user does not exist"), client)
       }
 
