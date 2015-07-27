@@ -1,6 +1,6 @@
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, ActorLogging}
 import akka.event.LoggingReceive
 import akka.io.{IO, Tcp}
 import akka.util.ByteString
@@ -9,7 +9,7 @@ import scala.util.{Try, Success, Failure}
 
 import Response._
 
-abstract trait CommandActor extends Actor {
+abstract trait CommandProcessor extends Actor with ActorLogging {
   this: CommandHandler =>
 
   val crlf = "\r\n"
@@ -71,11 +71,19 @@ abstract trait CommandActor extends Actor {
     writeResponse(res) map (sendFunc)
   }
 
-  def send(x: String) = sender ! Tcp.Write(ByteString(x))
+  def send(x: String) = {
+    sender ! Tcp.Write(ByteString(x))
+    log.debug(s"<<< $x")
+  }
 
-  def sendTo(to: Client)(x: String) = to.socket ! Tcp.Write(ByteString(x))
+  def sendTo(to: Client)(x: String) = {
+    to.socket ! Tcp.Write(ByteString(x))
+    log.debug(s"<<< $x")
+  }
 
   def process(cmd: String) = {
+    log.debug(s">>> $cmd")
+
     val res = handleCommand(cmd) match {
       case Right(res) => sendResponse(res, send)
       case Left(e) => sendError(e, send)

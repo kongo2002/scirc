@@ -20,7 +20,7 @@ class ClientActor(val server: ServerContext,
     remote: InetSocketAddress,
     val nickManager: ActorRef,
     val channelManager: ActorRef)
-  extends CommandActor
+  extends CommandProcessor
   with NickHandler
   with PingHandler
   with UserHandler
@@ -60,6 +60,7 @@ class ClientActor(val server: ServerContext,
   }
 
   def handle(op: Operation): Response = {
+
     val client = Client(self, sender, ctx)
     val handler = op.cmd match {
       case PingCmd    => handlePing _
