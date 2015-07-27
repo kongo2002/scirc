@@ -39,7 +39,7 @@ object Server {
   def getPort(str: Array[String]) = {
     str.toList match {
       case h :: _ => h.toInt
-      case _ => 9999
+      case _ => 6667
     }
   }
 
