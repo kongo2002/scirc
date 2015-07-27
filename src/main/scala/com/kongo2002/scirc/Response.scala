@@ -49,6 +49,9 @@ object Response {
   case object ErrorNoTextToSend
     extends ErrorNumericReply(412, ":No text to send")
 
+  case class ErrorErroneousNick(nick: String)
+    extends ErrorNumericReply(432, s"$nick :Erroneous nickname")
+
   case class ErrorNickAlreadyInUse(nick: String)
     extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
 

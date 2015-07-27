@@ -9,7 +9,7 @@ import Response._
 
 object NickManager {
   // TODO: this regex is not 100% accurate
-  val valid = new Regex("""[^&#!+][-_a-zA-Z0-9]+]""")
+  val valid = new Regex("""[^&#!+][-_a-zA-Z0-9]+""")
 
   def isValidNick(nick: String): Boolean = {
     nick match {
@@ -58,13 +58,20 @@ class NickManager extends Actor with ActorLogging with SendActor {
         case Some(ref) =>
           val exists = !nicks.get(to).isEmpty
 
+          // nick already exists
           if (exists)
             sender ! NickErr(ErrorNickAlreadyInUse(to), client)
+          // 'free' nick
           else if (sender == ref) {
-            nicks -= from += (to -> sender)
-            sender ! NickAck(to, client)
+            // validate nickname
+            if (isValidNick(to)) {
+              nicks -= from += (to -> sender)
+              sender ! NickAck(to, client)
 
-            log.info(s"changed nick from '$from' to '$to'")
+              log.info(s"changed nick from '$from' to '$to'")
+            } else {
+              sender ! NickErr(ErrorErroneousNick(to), client)
+            }
           }
           else
             sender ! NickErr(StringError("invalid user"), client)
@@ -78,10 +85,15 @@ class NickManager extends Actor with ActorLogging with SendActor {
       if (exists)
         sender ! NickErr(ErrorNickAlreadyInUse(nick), client)
       else {
-        nicks += (nick -> sender)
-        sender ! NickAck(nick, client)
+        // validate nickname
+        if (isValidNick(nick)) {
+          nicks += (nick -> sender)
+          sender ! NickAck(nick, client)
 
-        log.info(s"registered nick '$nick'")
+          log.info(s"registered nick '$nick'")
+        } else {
+          sender ! NickErr(ErrorErroneousNick(nick), client)
+        }
       }
 
     case OnlineNicks(ns, client) =>
