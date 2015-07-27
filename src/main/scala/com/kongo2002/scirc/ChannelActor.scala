@@ -13,9 +13,11 @@ object ChannelActor {
   // request messages
   case class UserJoin(nick: String, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
+  case class GetChannelModes(channel: String, client: Client)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, names: List[String], client: Client)
+  case class ChannelModes(channel: String, modes: String, client: Client)
 }
 
 class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext)
@@ -23,13 +25,15 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   with ActorLogging
   with SendActor {
 
-  import ClientActor._
   import ChannelActor._
+  import ClientActor._
   import NickManager._
   import Response._
 
   var topic = ""
+
   val members = Map.empty[String, Client]
+  val modes = new Modes.ChannelModeSet
 
   def join(nick: String, client: Client) = {
     if (!members.contains(nick)) {
@@ -92,6 +96,9 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         // TODO: or 401?
         client.client ! Err(ErrorCannotSendToChannel(name), client)
       }
+
+    case GetChannelModes(channel, client) =>
+      client.client ! ChannelModes(channel, modes.modeString, client)
 
     case ChangeNick(oldNick, newNick, client) =>
       members.get(oldNick) match {

@@ -3,7 +3,7 @@ package com.kongo2002.scirc
 object Modes {
   import scala.collection.mutable.HashSet
 
-  sealed abstract class IrcMode(val chr: Char)
+  sealed abstract class IrcMode(val chr: Char, val args: Int = 0)
 
   // USER MODES
 

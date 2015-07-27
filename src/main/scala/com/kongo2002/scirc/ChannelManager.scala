@@ -87,6 +87,14 @@ class ChannelManager(server: ServerContext)
           client.client ! Err(ErrorNoSuchChannel(channel), client)
       }
 
+    case msg@GetChannelModes(channel, client) =>
+      getChannel(channel) match {
+        case Some(c) =>
+          c forward msg
+        case None =>
+          client.client ! Err(ErrorNoSuchChannel(channel), client)
+      }
+
     case msg@ChangeNick(_, _, _) =>
       channels.values.foreach { c =>
         c forward msg
