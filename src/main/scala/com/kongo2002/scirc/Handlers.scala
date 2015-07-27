@@ -70,6 +70,29 @@ object Handlers {
     }
   }
 
+  trait ModeHandler extends BaseHandler {
+    this: ClientActor =>
+
+    def handleMode(op: Operation, client: Client): Response = {
+      val numArgs = op.args.size
+
+      val target = op.get(0)
+      val mode = op.get(1)
+
+      if (target == ctx.nick) {
+        // set modes if given
+        if (mode != "") {
+          log.debug(s"${ctx.nick}: trying to apply modes: $mode")
+          ctx.modes.applyMode(mode)
+        }
+
+        Right(ReplyUserModeIs(ctx.modes))
+      }
+      else
+        Left(ErrorUsersDontMatch)
+    }
+  }
+
   trait WhoIsHandler extends BaseHandler {
     this: ClientActor =>
 
@@ -132,7 +155,9 @@ object Handlers {
     def handleUser(op: Operation, client: Client): Response = {
       ctx.user = op.get(0)
       ctx.realname = op.get(3)
-      ctx.modes = op.getInt(1).getOrElse(0)
+
+      // TODO: set default mask
+      val modeBitMask = op.getInt(1).getOrElse(0)
 
       self ! Registered(client)
 

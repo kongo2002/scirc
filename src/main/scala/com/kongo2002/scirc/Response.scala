@@ -58,6 +58,9 @@ object Response {
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 
+  case object ErrorUsersDontMatch
+    extends ErrorNumericReply(502, ":Cannot change mode for other users")
+
   // success types
   abstract trait SuccessResponse
   case object EmptyResponse              extends SuccessResponse
@@ -79,6 +82,9 @@ object Response {
 
   case class ReplyMyInfo(msg: String)
     extends SuccessNumericReply(4, msg)
+
+  case class ReplyUserModeIs(modes: Modes.ModeSet)
+    extends SuccessNumericReply(221, modes.modeString)
 
   case class ReplyIson(msg: String)
     extends SuccessNumericReply(303, msg)
