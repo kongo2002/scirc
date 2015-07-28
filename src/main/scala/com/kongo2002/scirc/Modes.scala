@@ -83,7 +83,7 @@ object Modes {
       seq.foldLeft(false) { (acc, x) => func(x) || acc }
     }
 
-    def modeString: String = map(_.chr).mkString
+    def modeString: String = "+" + map(_.chr).mkString
 
     def setMode(chr: Char): Boolean = modifyMode(add(_), chr)
 
