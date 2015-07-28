@@ -10,13 +10,10 @@ trait ModeHandler extends BaseHandler {
 
   private def nickMode(nick: String, op: Operation): Response = {
     if (nick == ctx.nick) {
-      val mode = op.get(1)
-
       // set modes if given
-      if (mode != "") {
-        log.debug(s"${ctx.nick}: MODE request '$mode'")
-
-        if (ctx.modes.applyMode(mode))
+      if (op.args.size > 1) {
+        val modes = op.args.drop(1)
+        if (ctx.modes.applyModes(modes))
           log.debug(s"${ctx.nick}: new MODE set '${ctx.modes.modeString}'")
       }
 
@@ -32,9 +29,7 @@ trait ModeHandler extends BaseHandler {
   }
 
   private def channelMode(channel: String, op: Operation, client: Client): Response = {
-    val mode = op.get(1)
-
-    if (mode != "") {
+    if (op.args.size > 1) {
       val args = op.args.drop(1)
       channelManager ! SetChannelModes(channel, args, client)
     } else {

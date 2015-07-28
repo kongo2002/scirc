@@ -1,7 +1,7 @@
 package com.kongo2002.scirc
 
 object Modes {
-  import scala.collection.mutable.{ArrayBuffer, HashSet}
+  import scala.collection.mutable.{ArrayBuffer, HashMap}
 
   sealed abstract class IrcMode(val chr: Char, val acceptArg: Boolean = false)
   sealed abstract class ArgIrcMode(chr: Char)
@@ -70,35 +70,54 @@ object Modes {
     InvitationMaskMode
   ))
 
-  abstract class ModeSet extends HashSet[IrcMode] {
+  abstract class ModeSet extends HashMap[IrcMode, List[String]] {
     val modes: Map[Char, IrcMode]
 
-    private def modifyMode(func: IrcMode => Boolean, chr: Char): Boolean = {
-      modes.get(chr) match {
-        case Some(mode) => func(mode)
-        case None => false
-      }
-    }
-
-    private def anyChange[A](seq: Seq[A], func: A => Boolean): Boolean = {
+    private def anyChange[A](seq: Seq[A])(func: A => Boolean): Boolean = {
       // we have to invoke 'func' for *every* item
       seq.foldLeft(false) { (acc, x) => func(x) || acc }
     }
 
-    def modeString: String = "+" + map(_.chr).mkString
+    // TODO: not sure if we have to filter for 'non-argument' modes
+    def modeString: String =
+      "+" + keys.map(_.chr).mkString
 
-    def setMode(chr: Char): Boolean = modifyMode(add(_), chr)
+    def setMode(mode: IrcMode, arg: String): Boolean = {
+      if (arg != "") {
+        get(mode) match {
+          case Some(v) => update(mode, arg +: v)
+          case None => update(mode, List(arg))
+        }
+      } else {
+        update(mode, List())
+      }
+      true
+    }
 
-    def unsetMode(chr: Char): Boolean = modifyMode(remove(_), chr)
+    def unsetMode(mode: IrcMode, arg: String): Boolean = {
+      if (arg != "") {
+        get(mode) match {
+          case Some(v) => update(mode, v.filter((arg != _))); true
+          case None => false
+        }
+      } else {
+        remove(mode).isDefined
+      }
+    }
 
-    def isSet(chr: Char): Boolean = exists(mode => mode.chr == chr)
+    def isSet(chr: Char): Boolean = exists { case (k, _) => k.chr == chr }
 
     def isSet(mode: IrcMode): Boolean = contains(mode)
 
-    def applyMode(mode: String): Boolean = mode.toSeq match {
-      case Seq('+', m@_*) => anyChange(m, setMode _)
-      case Seq('-', m@_*) => anyChange(m, unsetMode _)
-      case _ => false
+    def applyModes(arguments: Seq[String]): Boolean = {
+      val parser = new ModeParser(this, arguments)
+      parser.parse match {
+        case Nil => false
+        case xs => anyChange(xs) {
+          case (true, mode, arg)  => setMode(mode, arg)
+          case (false, mode, arg) => unsetMode(mode, arg)
+        }
+      }
     }
   }
 
@@ -111,10 +130,10 @@ object Modes {
   }
 
   class ModeParser(modes: ModeSet, arguments: Seq[String]) {
-    var set = true
-    var mode: List[Char] = Nil
+    private var set = true
+    private var mode: List[Char] = Nil
 
-    val args = new ArrayBuffer[String]
+    private val args = new ArrayBuffer[String]
     args.appendAll(arguments)
 
     def parse: List[(Boolean, IrcMode, String)] = parseMode match {

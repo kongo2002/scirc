@@ -106,10 +106,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       client.client ! ChannelModes(channel, modes.modeString, client)
 
     case SetChannelModes(channel, args, client) =>
-      // TODO: handle all kinds of mode parameters
-      // TODO: just the first one for now
-      val mode = args(0)
-      if (modes.applyMode(mode))
+      if (modes.applyModes(args))
         log.debug(s"${name}: new MODE set '${modes.modeString}'")
 
       client.client ! ChannelModes(channel, modes.modeString, client)
