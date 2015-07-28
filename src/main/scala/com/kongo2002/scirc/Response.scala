@@ -108,6 +108,9 @@ object Response {
   case class ReplyChannelModeIs(channel: String, modes: String)
     extends SuccessNumericReply(324, s"$channel $modes")
 
+  case class ReplyChannelCreation(channel: String, creation: java.util.Date)
+    extends SuccessNumericReply(329, s"$channel ${creation.getTime / 1000}")
+
   case class ReplyNoTopic(channel: String)
     extends SuccessNumericReply(331, s"$channel :No topic is set")
 

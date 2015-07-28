@@ -17,7 +17,7 @@ object ChannelActor {
   case class GetChannelModes(channel: String, client: Client)
 
   // response messages
-  case class ChannelJoined(channel: String, topic: String, names: List[String], client: Client)
+  case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
   case class ChannelModes(channel: String, modes: String, client: Client)
 }
 
@@ -35,6 +35,9 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
   val members = Map.empty[String, Client]
   val modes = new Modes.ChannelModeSet
+
+  // TODO: a persisted channel might be created earlier
+  val created = java.util.Calendar.getInstance().getTime()
 
   def join(nick: String, client: Client) = {
     if (!members.contains(nick)) {
@@ -67,7 +70,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       if (join(nick, client)) {
         // notify the client that he successfully joined the channel
         val names = members.keys.toList
-        client.client ! ChannelJoined(name, topic, names, client)
+        client.client ! ChannelJoined(name, topic, created, names, client)
 
         // notify all members of member join
         toAll(s":${client.ctx.prefix} JOIN $name\r\n")

@@ -79,6 +79,7 @@ object Modes {
     }
 
     private def anyChange[A](seq: Seq[A], func: A => Boolean): Boolean = {
+      // we have to invoke 'func' for *every* item
       seq.foldLeft(false) { (acc, x) => func(x) || acc }
     }
 
