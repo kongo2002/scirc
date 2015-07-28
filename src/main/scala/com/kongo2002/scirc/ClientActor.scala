@@ -31,6 +31,7 @@ class ClientActor(val server: ServerContext,
   with WhoIsHandler
   with ModeHandler
   with PrivMsgHandler
+  with WhoHandler
   with CommandHandler {
 
   import Commands._
@@ -72,6 +73,7 @@ class ClientActor(val server: ServerContext,
       case PrivMsgCmd => handlePrivMsg _
       case WhoIsCmd   => handleWhois _
       case ModeCmd    => handleMode _
+      case WhoCmd     => handleWho _
       case PongCmd    => noop _
     }
 

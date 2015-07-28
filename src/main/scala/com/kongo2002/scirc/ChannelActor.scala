@@ -15,6 +15,7 @@ object ChannelActor {
   case class UserPart(nick: String, reason: String, client: Client)
   case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
+  case class WhoQuery(channel: String, opOnly: Boolean, client: Client)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
@@ -130,5 +131,21 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
           members += (newNick -> c)
         case None =>
       }
+
+    case WhoQuery(channel, opOnly, client) =>
+      members.values.foreach { c =>
+        // TODO: evaluate 'opOnly'
+
+        val info = Info.UserWhoInfo(c.ctx,
+          channel,
+          false, // TODO: away
+          "H" // TODO: modes
+        )
+
+        client.client ! Msg(ReplyWho(channel, info), client)
+      }
+
+      // send end of list
+      client.client ! Msg(ReplyEndOfWho(channel), client)
   }
 }

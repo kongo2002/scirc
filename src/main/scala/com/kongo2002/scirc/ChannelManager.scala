@@ -97,6 +97,9 @@ class ChannelManager(server: ServerContext)
     case msg@SetChannelModes(channel, _, client) =>
       withChannel(channel, client) { c => c forward msg }
 
+    case msg@WhoQuery(channel, _, client) =>
+      withChannel(channel, client) { c => c forward msg }
+
     case msg@ChangeNick(_, _, _) =>
       channels.values.foreach { c =>
         c forward msg

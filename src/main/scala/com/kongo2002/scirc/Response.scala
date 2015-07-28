@@ -112,6 +112,9 @@ object Response {
   case class ReplyWhoIsServer(nick: String, server: String, info: String)
     extends SuccessNumericReply(312, s"$nick $server :$info")
 
+  case class ReplyEndOfWho(name: String)
+    extends SuccessNumericReply(315, s"$name :End of WHO list")
+
   case class ReplyEndOfWhoIsList(nick: String)
     extends SuccessNumericReply(318, s"$nick :End of WHOIS list")
 
@@ -127,6 +130,10 @@ object Response {
 
   case class ReplyTopic(channel: String, topic: String)
     extends SuccessNumericReply(332, s"$channel :$topic")
+
+  case class ReplyWho(channel: String, info: Info.UserWhoInfo)
+    extends SuccessNumericReply(352,
+      s"$channel ${info.ctx.user} ${info.ctx.host} ${info.ctx.ctx.host} ${info.ctx.nick} ${info.modes} :${info.ctx.hops} ${info.ctx.realname}")
 
   // TODO: channel type
   case class ReplyChannelNames(channel: String, names: String)

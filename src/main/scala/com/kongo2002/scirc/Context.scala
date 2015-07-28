@@ -8,6 +8,7 @@ case class ClientContext(ctx: ServerContext, host: String, var nick: String) {
   var user = ""
   var realname = ""
   var isRegistered = false
+  var hops = 0
 
   val modes = new Modes.UserModeSet
 

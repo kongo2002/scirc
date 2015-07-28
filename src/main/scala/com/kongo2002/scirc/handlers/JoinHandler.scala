@@ -25,6 +25,7 @@ trait JoinHandler extends BaseHandler {
       }
 
       // send list of names
+      // TODO: split into multiple messages if necessary
       val nameStr = names.mkString(" ")
       sendResponse(ReplyChannelNames(ch, nameStr), sendTo(client))
       sendResponse(ReplyEndOfNames(ch), sendTo(client))
