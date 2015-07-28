@@ -25,6 +25,11 @@ on the default [IRC][irc] port `6667` at `localhost`.
     $ sbt run
 
 
+## Tests
+
+You may run the test suite with `sbt test` if you like.
+
+
 ## Maintainer
 
 *scirc* is written by Gregor Uhlenheuer. You can reach me at
