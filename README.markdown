@@ -1,6 +1,8 @@
 
 # scirc
 
+[![build](https://api.travis-ci.org/kongo2002/scirc.svg)][travis]
+
 *scirc* is a basic [IRC][irc] server written in [Scala][scala] using the
 [akka][akka] framework.
 
@@ -52,3 +54,4 @@ You may run the test suite with `sbt test` if you like.
 [scala]: http://www.scala-lang.org/
 [akka]: http://akka.io/
 [sbt]: http://www.scala-sbt.org/
+[travis]: https://travis-ci.org/kongo2002/scirc/
