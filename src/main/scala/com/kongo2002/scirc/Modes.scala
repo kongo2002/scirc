@@ -109,6 +109,8 @@ object Modes {
 
     def isSet(mode: IrcMode): Boolean = contains(mode)
 
+    def getArgs(mode: IrcMode): List[String] = getOrElse(mode, List())
+
     def applyModes(arguments: Seq[String]): Boolean = {
       val parser = new ModeParser(this, arguments)
       parser.parse match {

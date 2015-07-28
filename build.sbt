@@ -9,7 +9,8 @@ scalacOptions ++= Seq("-deprecation", "-feature")
 libraryDependencies ++= {
   val akkaV = "2.3.11"
   Seq(
-    "com.typesafe.akka" %% "akka-actor" % akkaV
+    "com.typesafe.akka" %% "akka-actor" % akkaV,
+    "org.scalatest" %% "scalatest" % "2.2.4" % "test"
   )
 }
 
