@@ -8,7 +8,7 @@ trait ModeHandler extends BaseHandler {
 
   import ChannelActor._
 
-  private def nickMode(nick: String, op: Operation, client: Client): Response = {
+  private def nickMode(nick: String, op: Operation): Response = {
     if (nick == ctx.nick) {
       val mode = op.get(1)
 
@@ -46,7 +46,7 @@ trait ModeHandler extends BaseHandler {
       channelMode(target, op, client)
     // or a client/nick query
     else
-      nickMode(target, op, client)
+      nickMode(target, op)
   }
 
   def modeReceive: Receive = {

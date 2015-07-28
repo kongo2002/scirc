@@ -68,28 +68,28 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
     case x: SuccessNumericReply => Some(x.getMessage + crlf)
   }
 
-  def sendError(e: ErrorResponse, sendFunc: String => Unit) = {
+  def sendError(e: ErrorResponse, sendFunc: String => Unit): Unit = {
     sendFunc(errorResponse(e))
   }
 
-  def sendResponse(res: SuccessResponse, sendFunc: String => Unit) = {
+  def sendResponse(res: SuccessResponse, sendFunc: String => Unit): Unit = {
     writeResponse(res) map (sendFunc)
   }
 
-  def send(x: String) = {
+  def send(x: String): Unit = {
     sender ! Tcp.Write(ByteString(x))
     log.debug(s"<<< $x")
   }
 
-  def sendTo(to: Client)(x: String) = {
+  def sendTo(to: Client)(x: String): Unit = {
     to.socket ! Tcp.Write(ByteString(x))
     log.debug(s"<<< $x")
   }
 
-  def process(cmd: String) = {
+  def process(cmd: String): Unit = {
     log.debug(s">>> $cmd")
 
-    val res = handleCommand(cmd) match {
+    handleCommand(cmd) match {
       case Right(res) => sendResponse(res, send)
       case Left(e) => sendError(e, send)
     }

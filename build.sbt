@@ -12,3 +12,5 @@ libraryDependencies ++= {
     "com.typesafe.akka" %% "akka-actor" % akkaV
   )
 }
+
+addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.12")
