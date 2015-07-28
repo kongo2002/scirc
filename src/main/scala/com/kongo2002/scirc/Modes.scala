@@ -1,9 +1,11 @@
 package com.kongo2002.scirc
 
 object Modes {
-  import scala.collection.mutable.HashSet
+  import scala.collection.mutable.{ArrayBuffer, HashSet}
 
-  sealed abstract class IrcMode(val chr: Char, val args: Int = 0)
+  sealed abstract class IrcMode(val chr: Char, val acceptArg: Boolean = false)
+  sealed abstract class ArgIrcMode(chr: Char)
+    extends IrcMode(chr, true)
 
   // USER MODES
 
@@ -28,11 +30,11 @@ object Modes {
   case object SecretMode            extends IrcMode('s')
   case object ServerReopMode        extends IrcMode('r')
   case object OperatorTopicOnlyMode extends IrcMode('t')
-  case object ChannelKeyMode        extends IrcMode('k')
-  case object UserLimitMode         extends IrcMode('l')
-  case object BanMaskMode           extends IrcMode('b')
-  case object ExceptionMaskMode     extends IrcMode('e')
-  case object InvitationMaskMode    extends IrcMode('I')
+  case object ChannelKeyMode        extends ArgIrcMode('k')
+  case object UserLimitMode         extends ArgIrcMode('l')
+  case object BanMaskMode           extends ArgIrcMode('b')
+  case object ExceptionMaskMode     extends ArgIrcMode('e')
+  case object InvitationMaskMode    extends ArgIrcMode('I')
 
   private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
     modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
@@ -106,5 +108,64 @@ object Modes {
 
   class ChannelModeSet extends ModeSet {
     val modes = channelModes
+  }
+
+  class ModeParser(modes: ModeSet, arguments: Seq[String]) {
+    var set = true
+    var mode: List[Char] = Nil
+
+    val args = new ArrayBuffer[String]
+    args.appendAll(arguments)
+
+    def parse: List[(Boolean, IrcMode, String)] = parseMode match {
+      case None => Nil
+      case Some(ms) =>
+        // extract next character
+        val res = ms match {
+          case '+' :: m :: ms =>
+            set = true
+            mode = ms
+            m
+          case '-' :: m :: ms =>
+            set = false
+            mode = ms
+            m
+          case m :: ms =>
+            mode = ms
+            m
+        }
+        // lookup mode and attach (optional) arguments
+        attachModeArgs(set, res) match {
+          case Some(x) => x :: parse
+          case None => parse
+        }
+    }
+
+    private def attachModeArgs(set: Boolean, chr: Char) = {
+      // lookup mode (use available modes of the given set)
+      modes.modes.get(chr) match {
+        case Some(mode) =>
+          val arg =
+            if (mode.acceptArg && args.size > 0) {
+              args.remove(0)
+            } else ""
+          Some((set, mode, arg))
+        case None => None
+      }
+    }
+
+    private def parseMode: Option[List[Char]] = mode match {
+      // no mode set yet
+      case Nil =>
+        // arguments left?
+        if (args.size > 0) {
+          mode = args(0).toList
+          args.remove(0)
+          Some(mode)
+        } else None
+      // mode was already selected -> choose the rest
+      case xs =>
+        Some(xs)
+    }
   }
 }
