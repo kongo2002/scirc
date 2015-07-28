@@ -65,7 +65,7 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
     case StringResponse(str) => Some(str + crlf)
     case ListResponse(rs) =>
       Some(rs.map(writeResponse(_).getOrElse("")).mkString(""))
-    case x: SuccessNumericReply => Some(x.getMessage + crlf)
+    case x: Reply => Some(x.getMessage + crlf)
   }
 
   def sendError(e: ErrorResponse, sendFunc: String => Unit): Unit = {

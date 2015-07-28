@@ -20,7 +20,12 @@ trait ModeHandler extends BaseHandler {
           log.debug(s"${ctx.nick}: new MODE set '${ctx.modes.modeString}'")
       }
 
-      Right(ReplyUserModeIs(ctx.modes))
+      // I am not sure how to reply here. According to the the RFC 2811
+      // I understand to send a numeric reply
+      // but the practice of other servers appears to be different...
+      Right(ListResponse(List(
+        ReplyUserModeIs(ctx.modes),
+        HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}"))))
     }
     else
       Left(ErrorUsersDontMatch)
