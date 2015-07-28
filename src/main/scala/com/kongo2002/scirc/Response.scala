@@ -8,12 +8,23 @@ object Response {
   // error message
   case class Err(e: ErrorResponse, client: Client)
 
+  case class Msg(msg: Reply, client: Client)
+
   // general response
   type Response = Either[ErrorResponse, SuccessResponse]
 
+  abstract trait Reply {
+    def getMessage(implicit ctx: ClientContext): String
+  }
+
+  case class HostReply(msg: String) extends Reply {
+    def getMessage(implicit ctx: ClientContext) = {
+      s":${ctx.nick}!${ctx.user}@${ctx.host} $msg"
+    }
+  }
+
   // numeric replies
-  abstract class NumericReply(code: Int, msg: String)
-    extends SuccessResponse {
+  abstract class NumericReply(code: Int, msg: String) extends Reply {
 
     def getMessage(implicit ctx: ClientContext) = {
       val host = ctx.ctx.host

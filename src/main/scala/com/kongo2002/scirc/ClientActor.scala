@@ -60,7 +60,6 @@ class ClientActor(val server: ServerContext,
   }
 
   def handle(op: Operation): Response = {
-
     val client = Client(self, sender, ctx)
     val handler = op.cmd match {
       case PingCmd    => handlePing _
@@ -90,8 +89,9 @@ class ClientActor(val server: ServerContext,
       disconnect(Client(self, sender, ctx))
   }
 
-  def handleError: Receive = {
+  def handleReply: Receive = {
     case Err(e, client) => sendError(e, sendTo(client))
+    case Msg(msg, client) => sendMsg(msg, sendTo(client))
   }
 
   def receive =
@@ -102,6 +102,6 @@ class ClientActor(val server: ServerContext,
     modeReceive  orElse
     isonReceive  orElse
     whoisReceive orElse
-    handleError  orElse
+    handleReply  orElse
     handleClose
 }

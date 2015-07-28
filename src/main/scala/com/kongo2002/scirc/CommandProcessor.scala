@@ -72,6 +72,10 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
     sendFunc(errorResponse(e))
   }
 
+  def sendMsg(e: Reply, sendFunc: String => Unit): Unit = {
+    sendFunc(e.getMessage + crlf)
+  }
+
   def sendResponse(res: SuccessResponse, sendFunc: String => Unit): Unit = {
     writeResponse(res) map (sendFunc)
   }
