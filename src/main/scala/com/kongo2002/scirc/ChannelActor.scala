@@ -103,8 +103,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
             client.client ! Msg(ReplyEndOfInviteList(name), client)
         }
 
+      // set and unset operations may be handled similarly
       case ModeOperationType.SetMode | ModeOperationType.UnsetMode =>
-
+        val modeStr = toModeString(op)
+        client.client ! Msg(HostReply(s"MODE $name $modeStr"), client)
     }
   }
 

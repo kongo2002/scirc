@@ -102,6 +102,17 @@ object Modes {
     }
   }
 
+  def toModeString(op: ModeOperation) = {
+    def sign = if (op.t == UnsetMode) '-' else '+'
+    op.mode.arg match {
+      case NArgs => ""
+      case OneArg if op.args.size > 0 =>
+        val arg = op.args(0)
+        s"${sign}${op.mode.chr} ${arg}"
+      case OneArg | NoArg => s"${sign}${op.mode.chr}"
+    }
+  }
+
   abstract class ModeSet extends HashMap[IrcMode, HashSet[String]] {
     val modes: Map[Char, IrcMode]
 
