@@ -135,4 +135,22 @@ class ModesSpec extends FlatSpec with Matchers {
 
     set.getArgs(BanMaskMode) should be (List("bar"))
   }
+
+  it should "output a basic mode string" in {
+    val set = channelSet("+a")
+
+    set.modeString should be ("+a")
+  }
+
+  it should "output a mode string with arguments" in {
+    val set = channelSet("+l", "100")
+
+    set.modeString should be ("+l 100")
+  }
+
+  it should "output a mode string and ignore list modes" in {
+    val set = channelSet("+lb", "100", "bar")
+
+    set.modeString should be ("+l 100")
+  }
 }

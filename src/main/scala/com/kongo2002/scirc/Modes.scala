@@ -18,15 +18,19 @@ package com.kongo2002.scirc
 object Modes {
   import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
-  sealed abstract class IrcMode(val chr: Char, val acceptArg: Boolean = false)
-  sealed abstract class ArgIrcMode(chr: Char)
-    extends IrcMode(chr, true)
+  object ModeArgumentType extends Enumeration {
+    type ModeArgumentType = Value
+    val NoArg, OneArg, NArgs = Value
+  }
+  import ModeArgumentType._
 
   object ModeOperationType extends Enumeration {
     type ModeOperationType = Value
     val SetMode, UnsetMode, ListMode = Value
   }
   import ModeOperationType._
+
+  sealed abstract class IrcMode(val chr: Char, val arg: ModeArgumentType = NoArg)
 
   case class ModeOperation(t: ModeOperationType, mode: IrcMode, args: List[String])
 
@@ -64,11 +68,11 @@ object Modes {
   case object SecretMode            extends IrcMode('s')
   case object ServerReopMode        extends IrcMode('r')
   case object OperatorTopicOnlyMode extends IrcMode('t')
-  case object ChannelKeyMode        extends ArgIrcMode('k')
-  case object UserLimitMode         extends ArgIrcMode('l')
-  case object BanMaskMode           extends ArgIrcMode('b')
-  case object ExceptionMaskMode     extends ArgIrcMode('e')
-  case object InvitationMaskMode    extends ArgIrcMode('I')
+  case object ChannelKeyMode        extends IrcMode('k', OneArg)
+  case object UserLimitMode         extends IrcMode('l', OneArg)
+  case object BanMaskMode           extends IrcMode('b', NArgs)
+  case object ExceptionMaskMode     extends IrcMode('e', NArgs)
+  case object InvitationMaskMode    extends IrcMode('I', NArgs)
 
   val channelModes = toMap(Seq(
     // user related
@@ -111,18 +115,39 @@ object Modes {
       }
     }
 
-    // TODO: not sure if we have to filter for 'non-argument' modes
-    def modeString: String =
-      "+" + keys.map(_.chr).mkString
+    def modeString: String = {
+      val (modes, args) = foldLeft(("", List[String]())) { (acc, x) =>
+        val (ms, as) = acc
+        val (key, value) = x
+
+        key.arg match {
+          // do not include list modes in mode string
+          case NArgs => acc
+          case NoArg => (ms + key.chr, as)
+          case OneArg => (ms + key.chr, as ++ value.toList)
+        }
+      }
+
+      if (!args.isEmpty)
+        "+" + modes + " " + args.mkString(" ")
+      else
+        "+" + modes
+    }
+
+    def singleSet(value: String) = new HashSet[String] += value
 
     def setMode(mode: IrcMode, arg: String): Boolean = {
       if (arg != "") {
         get(mode) match {
-          case Some(v) => update(mode, v += arg)
+          case Some(v) =>
+            // at this point we have to make sure that 1-argument modes
+            // only store up to one argument at a time
+            if (mode.arg == OneArg)
+              update(mode, singleSet(arg))
+            else
+              update(mode, v += arg)
           case None =>
-            var single = new HashSet[String]
-            single += arg
-            update(mode, single)
+            update(mode, singleSet(arg))
         }
       } else
         update(mode, new HashSet[String])
@@ -216,16 +241,21 @@ object Modes {
     private def attachModeArgs(set: ModeOperationType, chr: Char) = {
       // lookup mode (use available modes of the given set)
       modes.modes.get(chr) match {
+        // no-argument mode
+        case Some(mode) if mode.arg == NoArg =>
+          Some((set, mode, ""))
+        // one or N argument mode
         case Some(mode) =>
-          val (arg, opType) =
-            if (mode.acceptArg) {
-              if (args.size > 0)
-                (args.remove(0), set)
-              else
-                ("", ListMode)
-            }
-            else ("", set)
-          Some((opType, mode, arg))
+          if (args.size > 0)
+            Some((set, mode, args.remove(0)))
+          else if (mode.arg == NArgs)
+            Some((ListMode, mode, ""))
+          else if (set == UnsetMode)
+            Some((set, mode, ""))
+          // this is a 'one argument' mode without an argument
+          else
+            None
+        // mode does not exist at all
         case None => None
       }
     }

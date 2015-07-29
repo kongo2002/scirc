@@ -101,12 +101,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
               client.client ! Msg(ReplyInviteList(name, mask), client)
             }
             client.client ! Msg(ReplyEndOfInviteList(name), client)
-
-          // TODO: other list requests
-          case _ =>
         }
-      // TODO: set and unset
-      case _ =>
+
+      case ModeOperationType.SetMode | ModeOperationType.UnsetMode =>
+
     }
   }
 
