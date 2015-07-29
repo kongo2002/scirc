@@ -156,4 +156,10 @@ object Response {
 
   case class ReplyEndOfNames(channel: String)
     extends SuccessNumericReply(366, s"$channel :End of NAMES list")
+
+  case class ReplyBanList(channel: String, mask: String)
+    extends SuccessNumericReply(367, s"$channel $mask")
+
+  case class ReplyEndOfBanList(channel: String)
+    extends SuccessNumericReply(368, s"$channel :End of channel ban list")
 }

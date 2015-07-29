@@ -44,6 +44,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
   import ChannelActor._
   import ClientActor._
+  import Modes._
   import NickManager._
   import Response._
 
@@ -79,6 +80,24 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   }
 
   def partOf(nick: String) = !members.get(nick).isEmpty
+
+  def handleModeResult(op: ModeOperation, client: Client) = {
+    op.t match {
+      // list requests
+      case ModeOperationType.ListMode =>
+        op.mode match {
+          case BanMaskMode =>
+            op.args foreach { ban =>
+              client.client ! Msg(ReplyBanList(name, ban), client)
+            }
+            client.client ! Msg(ReplyEndOfBanList(name), client)
+          // TODO: other list requests
+          case _ =>
+        }
+      // TODO: set and unset
+      case _ =>
+    }
+  }
 
   def receive: Receive = {
 
@@ -125,9 +144,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       if (!applied.isEmpty)
         log.debug(s"${name}: new MODE set '${modes.modeString}'")
 
-      // TODO: proper response messages
-
-      client.client ! ChannelModes(channel, modes.modeString, client)
+      applied foreach (handleModeResult(_, client))
 
     case ChangeNick(oldNick, newNick, client) =>
       members.get(oldNick) match {
