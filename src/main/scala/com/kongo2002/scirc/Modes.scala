@@ -22,17 +22,42 @@ object Modes {
   sealed abstract class ArgIrcMode(chr: Char)
     extends IrcMode(chr, true)
 
-  // USER MODES
+  object ModeOperationType extends Enumeration {
+    type ModeOperationType = Value
+    val SetMode, UnsetMode, ListMode = Value
+  }
+  import ModeOperationType._
+
+  case class ModeOperation(t: ModeOperationType, mode: IrcMode, args: List[String])
+
+  // GENERAL USER MODES
 
   case object AwayMode            extends IrcMode('a')
   case object InvisibleMode       extends IrcMode('i')
   case object WallOpsMode         extends IrcMode('w')
   case object RestrictedMode      extends IrcMode('r')
+  case object ServerRecipientMode extends IrcMode('s')
+
+  val userModes = toMap(Seq(
+    AwayMode,
+    InvisibleMode,
+    WallOpsMode,
+    RestrictedMode,
+    ServerRecipientMode
+  ))
+
+  // USER CHANNEL MODES
+
   case object OperatorMode        extends IrcMode('o')
   // 'channel creator' flag
   case object LocalOperatorMode   extends IrcMode('O')
-  case object ServerRecipientMode extends IrcMode('s')
   case object VoiceMode           extends IrcMode('v')
+
+  val userChannelModes = toMap(Seq(
+    OperatorMode,
+    LocalOperatorMode,
+    VoiceMode
+  ))
 
   // CHANNEL RELATED MODES
 
@@ -51,31 +76,6 @@ object Modes {
   case object ExceptionMaskMode     extends ArgIrcMode('e')
   case object InvitationMaskMode    extends ArgIrcMode('I')
 
-  object ModeOperationType extends Enumeration {
-    type ModeOperationType = Value
-    val SetMode, UnsetMode, ListMode = Value
-  }
-  import ModeOperationType._
-
-  case class ModeOperation(t: ModeOperationType, mode: IrcMode, args: List[String])
-
-  private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
-    modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
-      map + ((x.chr, x))
-    }
-  }
-
-  val userModes = toMap(Seq(
-    AwayMode,
-    InvisibleMode,
-    WallOpsMode,
-    RestrictedMode,
-    OperatorMode,
-    LocalOperatorMode,
-    VoiceMode,
-    ServerRecipientMode
-  ))
-
   val channelModes = toMap(Seq(
     AnonymousMode,
     InviteOnlyMode,
@@ -92,6 +92,12 @@ object Modes {
     ExceptionMaskMode,
     InvitationMaskMode
   ))
+
+  private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
+    modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
+      map + ((x.chr, x))
+    }
+  }
 
   abstract class ModeSet extends HashMap[IrcMode, List[String]] {
     val modes: Map[Char, IrcMode]
@@ -165,6 +171,10 @@ object Modes {
 
   class UserModeSet extends ModeSet {
     val modes = userModes
+  }
+
+  class ChannelUserModeSet extends ModeSet {
+    val modes = userChannelModes
   }
 
   class ChannelModeSet extends ModeSet {
