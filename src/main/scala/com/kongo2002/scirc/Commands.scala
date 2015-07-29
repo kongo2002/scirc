@@ -32,28 +32,28 @@ case class Operation(cmd: Command, args: Array[String]) {
   }
 }
 
-abstract class Command(cmd: String, numArgs: Int) {
+sealed abstract class Command(cmd: String, numArgs: Int) {
   def validate(input: Array[String]) = input.size >= numArgs
 }
 
-abstract class NoArgCommand(cmd: String) extends Command(cmd, 0)
-abstract class OneArgCommand(cmd: String) extends Command(cmd, 1)
+sealed abstract class NoArgCommand(cmd: String) extends Command(cmd, 0)
+sealed abstract class OneArgCommand(cmd: String) extends Command(cmd, 1)
 
 object Commands {
   import Response._
 
-  case object PingCmd extends OneArgCommand("PING")
-  case object PongCmd extends NoArgCommand("PONG")
-  case object NickCmd extends OneArgCommand("NICK")
-  case object QuitCmd extends NoArgCommand("QUIT")
-  case object IsonCmd extends OneArgCommand("ISON")
-  case object JoinCmd extends OneArgCommand("JOIN")
-  case object PartCmd extends OneArgCommand("PART")
+  case object PingCmd    extends OneArgCommand("PING")
+  case object PongCmd    extends NoArgCommand("PONG")
+  case object NickCmd    extends OneArgCommand("NICK")
+  case object QuitCmd    extends NoArgCommand("QUIT")
+  case object IsonCmd    extends OneArgCommand("ISON")
+  case object JoinCmd    extends OneArgCommand("JOIN")
+  case object PartCmd    extends OneArgCommand("PART")
   case object PrivMsgCmd extends NoArgCommand("PRIVMSG")
-  case object WhoIsCmd extends OneArgCommand("WHOIS")
-  case object ModeCmd extends OneArgCommand("MODE")
-  case object WhoCmd extends OneArgCommand("WHO")
-  case object UserCmd extends Command("USER", 4)
+  case object WhoIsCmd   extends OneArgCommand("WHOIS")
+  case object ModeCmd    extends OneArgCommand("MODE")
+  case object WhoCmd     extends OneArgCommand("WHO")
+  case object UserCmd    extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
     "PING"    -> PingCmd,
