@@ -16,7 +16,7 @@
 package com.kongo2002.scirc
 
 object Modes {
-  import scala.collection.mutable.{ArrayBuffer, HashMap}
+  import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
   sealed abstract class IrcMode(val chr: Char, val acceptArg: Boolean = false)
   sealed abstract class ArgIrcMode(chr: Char)
@@ -53,12 +53,6 @@ object Modes {
   case object LocalOperatorMode   extends IrcMode('O')
   case object VoiceMode           extends IrcMode('v')
 
-  val userChannelModes = toMap(Seq(
-    OperatorMode,
-    LocalOperatorMode,
-    VoiceMode
-  ))
-
   // CHANNEL RELATED MODES
 
   case object AnonymousMode         extends IrcMode('a')
@@ -77,6 +71,11 @@ object Modes {
   case object InvitationMaskMode    extends ArgIrcMode('I')
 
   val channelModes = toMap(Seq(
+    // user related
+    OperatorMode,
+    LocalOperatorMode,
+    VoiceMode,
+    // channel related
     AnonymousMode,
     InviteOnlyMode,
     ModeratedMode,
@@ -99,7 +98,7 @@ object Modes {
     }
   }
 
-  abstract class ModeSet extends HashMap[IrcMode, List[String]] {
+  abstract class ModeSet extends HashMap[IrcMode, HashSet[String]] {
     val modes: Map[Char, IrcMode]
 
     private def aggregateOps[A, B](seq: Seq[A])(func: A => Option[B]): List[B] = {
@@ -119,11 +118,14 @@ object Modes {
     def setMode(mode: IrcMode, arg: String): Boolean = {
       if (arg != "") {
         get(mode) match {
-          case Some(v) => update(mode, arg +: v)
-          case None => update(mode, List(arg))
+          case Some(v) => update(mode, v += arg)
+          case None =>
+            var single = new HashSet[String]
+            single += arg
+            update(mode, single)
         }
       } else
-        update(mode, List())
+        update(mode, new HashSet[String])
 
       true
     }
@@ -131,7 +133,7 @@ object Modes {
     def unsetMode(mode: IrcMode, arg: String): Boolean = {
       if (arg != "") {
         get(mode) match {
-          case Some(v) => update(mode, v.filter((arg != _))); true
+          case Some(v) => update(mode, v -= arg); true
           case None => false
         }
       } else {
@@ -143,7 +145,10 @@ object Modes {
 
     def isSet(mode: IrcMode): Boolean = contains(mode)
 
-    def getArgs(mode: IrcMode): List[String] = getOrElse(mode, List())
+    def getArgs(mode: IrcMode): List[String] = get(mode) match {
+      case Some(x) => x.toList
+      case None => List()
+    }
 
     private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)
       (func: (IrcMode, String) => Boolean): Option[ModeOperation] = {
@@ -171,10 +176,6 @@ object Modes {
 
   class UserModeSet extends ModeSet {
     val modes = userModes
-  }
-
-  class ChannelUserModeSet extends ModeSet {
-    val modes = userChannelModes
   }
 
   class ChannelModeSet extends ModeSet {

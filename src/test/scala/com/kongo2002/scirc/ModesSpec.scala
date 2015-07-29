@@ -73,7 +73,7 @@ class ModesSpec extends FlatSpec with Matchers {
   }
 
   it should "parse mode and ignore invalid argument" in {
-    channel("m", "foo") should be (List((SetMode, ModeratedMode, "")))
+    channel("m", "XXX") should be (List((SetMode, ModeratedMode, "")))
   }
 
   it should "parse multiple modes with arguments" in {

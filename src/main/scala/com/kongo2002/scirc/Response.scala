@@ -146,6 +146,18 @@ object Response {
   case class ReplyTopic(channel: String, topic: String)
     extends SuccessNumericReply(332, s"$channel :$topic")
 
+  case class ReplyInviteList(channel: String, mask: String)
+    extends SuccessNumericReply(346, s"$channel $mask")
+
+  case class ReplyEndOfInviteList(channel: String)
+    extends SuccessNumericReply(347, s"$channel :End of channel invite list")
+
+  case class ReplyExceptList(channel: String, mask: String)
+    extends SuccessNumericReply(348, s"$channel $mask")
+
+  case class ReplyEndOfExceptList(channel: String)
+    extends SuccessNumericReply(349, s"$channel :End of channel exception list")
+
   case class ReplyWho(channel: String, info: Info.UserWhoInfo)
     extends SuccessNumericReply(352,
       s"$channel ${info.ctx.user} ${info.ctx.host} ${info.ctx.ctx.host} ${info.ctx.nick} ${info.modes} :${info.ctx.hops} ${info.ctx.realname}")

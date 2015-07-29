@@ -87,10 +87,21 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       case ModeOperationType.ListMode =>
         op.mode match {
           case BanMaskMode =>
-            op.args foreach { ban =>
-              client.client ! Msg(ReplyBanList(name, ban), client)
+            op.args foreach { mask =>
+              client.client ! Msg(ReplyBanList(name, mask), client)
             }
             client.client ! Msg(ReplyEndOfBanList(name), client)
+          case ExceptionMaskMode =>
+            op.args foreach { mask =>
+              client.client ! Msg(ReplyExceptList(name, mask), client)
+            }
+            client.client ! Msg(ReplyEndOfExceptList(name), client)
+          case InvitationMaskMode =>
+            op.args foreach { mask =>
+              client.client ! Msg(ReplyInviteList(name, mask), client)
+            }
+            client.client ! Msg(ReplyEndOfInviteList(name), client)
+
           // TODO: other list requests
           case _ =>
         }
