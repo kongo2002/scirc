@@ -153,4 +153,15 @@ class ModesSpec extends FlatSpec with Matchers {
 
     set.modeString should be ("+l 100")
   }
+
+  it should "replace single argument modes" in {
+    val set = channelSet("+l", "100")
+
+    set.modeString should be ("+l 100")
+
+    set.applyModes(List("+l", "200"))
+
+    set.modeString should be ("+l 200")
+    set.getArgs(UserLimitMode) should be (List("200"))
+  }
 }
