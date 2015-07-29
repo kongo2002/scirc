@@ -51,6 +51,14 @@ object Modes {
   case object ExceptionMaskMode     extends ArgIrcMode('e')
   case object InvitationMaskMode    extends ArgIrcMode('I')
 
+  object ModeOperationType extends Enumeration {
+    type ModeOperationType = Value
+    val SetMode, UnsetMode, ListMode = Value
+  }
+  import ModeOperationType._
+
+  case class ModeOperation(t: ModeOperationType, mode: IrcMode, args: List[String])
+
   private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
     modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
       map + ((x.chr, x))
@@ -131,8 +139,9 @@ object Modes {
       parser.parse match {
         case Nil => false
         case xs => anyChange(xs) {
-          case (true, mode, arg)  => setMode(mode, arg)
-          case (false, mode, arg) => unsetMode(mode, arg)
+          case (SetMode, mode, arg)  => setMode(mode, arg)
+          case (UnsetMode, mode, arg) => unsetMode(mode, arg)
+          case (ListMode, _, _) => true
         }
       }
     }
@@ -147,23 +156,23 @@ object Modes {
   }
 
   class ModeParser(modes: ModeSet, arguments: Seq[String]) {
-    private var set = true
+    private var set = SetMode
     private var mode: List[Char] = Nil
 
     private val args = new ArrayBuffer[String]
     args.appendAll(arguments)
 
-    def parse: List[(Boolean, IrcMode, String)] = parseMode match {
+    def parse: List[(ModeOperationType, IrcMode, String)] = parseMode match {
       case None => Nil
       case Some(ms) =>
         // extract next character
         val res = ms match {
           case '+' :: m :: ms =>
-            set = true
+            set = SetMode
             mode = ms
             m
           case '-' :: m :: ms =>
-            set = false
+            set = UnsetMode
             mode = ms
             m
           case m :: ms =>
@@ -177,15 +186,19 @@ object Modes {
         }
     }
 
-    private def attachModeArgs(set: Boolean, chr: Char) = {
+    private def attachModeArgs(set: ModeOperationType, chr: Char) = {
       // lookup mode (use available modes of the given set)
       modes.modes.get(chr) match {
         case Some(mode) =>
-          val arg =
-            if (mode.acceptArg && args.size > 0) {
-              args.remove(0)
-            } else ""
-          Some((set, mode, arg))
+          val (arg, opType) =
+            if (mode.acceptArg) {
+              if (args.size > 0)
+                (args.remove(0), set)
+              else
+                ("", ListMode)
+            }
+            else ("", set)
+          Some((opType, mode, arg))
         case None => None
       }
     }

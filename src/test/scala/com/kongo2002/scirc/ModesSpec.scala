@@ -19,6 +19,7 @@ import org.scalatest.{FlatSpec, Matchers}
 
 class ModesSpec extends FlatSpec with Matchers {
   import Modes._
+  import ModeOperationType._
 
   def user(x: String*) = new ModeParser(new UserModeSet, x).parse
   def channel(x: String*) = new ModeParser(new ChannelModeSet, x).parse
@@ -56,38 +57,38 @@ class ModesSpec extends FlatSpec with Matchers {
   }
 
   it should "parse invisible mode" in {
-    user("i") should be (List((true, InvisibleMode, "")))
+    user("i") should be (List((SetMode, InvisibleMode, "")))
   }
 
   it should "parse positive sign" in {
-    user("+i") should be (List((true, InvisibleMode, "")))
+    user("+i") should be (List((SetMode, InvisibleMode, "")))
   }
 
   it should "parse negative sign" in {
-    user("-i") should be (List((false, InvisibleMode, "")))
+    user("-i") should be (List((UnsetMode, InvisibleMode, "")))
   }
 
   it should "parse mode with argument" in {
-    channel("b", "foo") should be (List((true, BanMaskMode, "foo")))
+    channel("b", "foo") should be (List((SetMode, BanMaskMode, "foo")))
   }
 
   it should "parse mode and ignore invalid argument" in {
-    channel("m", "foo") should be (List((true, ModeratedMode, "")))
+    channel("m", "foo") should be (List((SetMode, ModeratedMode, "")))
   }
 
   it should "parse multiple modes with arguments" in {
     channel("bI", "foo", "bar") should be
-      (List((true, BanMaskMode, "foo"), (true, InvitationMaskMode, "bar")))
+      (List((SetMode, BanMaskMode, "foo"), (true, InvitationMaskMode, "bar")))
   }
 
   it should "parse multiple modes with arguments with different signs" in {
     channel("+b-I", "foo", "bar") should be
-      (List((true, BanMaskMode, "foo"), (false, InvitationMaskMode, "bar")))
+      (List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar")))
   }
 
   it should "parse multiple modes with arguments with different signs in another order" in {
     channel("+b", "foo", "-I", "bar") should be
-      (List((true, BanMaskMode, "foo"), (false, InvitationMaskMode, "bar")))
+      (List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar")))
   }
 
   "UserModeSet" should "apply a mode" in {
@@ -108,8 +109,8 @@ class ModesSpec extends FlatSpec with Matchers {
     userSet("+I").isSet('I') should be (false)
   }
 
-  "ChannelModeSet" should "apply ban list mode" in {
-    channelSet("+b").isSet('b') should be (true)
+  "ChannelModeSet" should "not apply ban list mode without argument" in {
+    channelSet("+b").isSet('b') should be (false)
   }
 
   it should "apply ban list mode with argument" in {
