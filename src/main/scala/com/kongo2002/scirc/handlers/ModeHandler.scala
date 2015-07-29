@@ -28,7 +28,8 @@ trait ModeHandler extends BaseHandler {
       // set modes if given
       if (op.args.size > 1) {
         val modes = op.args.drop(1)
-        if (ctx.modes.applyModes(modes))
+        val applied = ctx.modes.applyModes(modes)
+        if (!applied.isEmpty)
           log.debug(s"${ctx.nick}: new MODE set '${ctx.modes.modeString}'")
       }
 

@@ -96,9 +96,14 @@ object Modes {
   abstract class ModeSet extends HashMap[IrcMode, List[String]] {
     val modes: Map[Char, IrcMode]
 
-    private def anyChange[A](seq: Seq[A])(func: A => Boolean): Boolean = {
+    private def aggregateOps[A, B](seq: Seq[A])(func: A => Option[B]): List[B] = {
       // we have to invoke 'func' for *every* item
-      seq.foldLeft(false) { (acc, x) => func(x) || acc }
+      seq.foldLeft(List[B]()) { (acc, x) =>
+        func(x) match {
+          case Some(value) => value +: acc
+          case None => acc
+        }
+      }
     }
 
     // TODO: not sure if we have to filter for 'non-argument' modes
@@ -111,9 +116,9 @@ object Modes {
           case Some(v) => update(mode, arg +: v)
           case None => update(mode, List(arg))
         }
-      } else {
+      } else
         update(mode, List())
-      }
+
       true
     }
 
@@ -134,14 +139,25 @@ object Modes {
 
     def getArgs(mode: IrcMode): List[String] = getOrElse(mode, List())
 
-    def applyModes(arguments: Seq[String]): Boolean = {
+    private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)
+      (func: (IrcMode, String) => Boolean): Option[ModeOperation] = {
+      if (func(mode, arg)) {
+        val value = if (arg != "") List(arg) else List()
+        Some(ModeOperation(op, mode, value))
+      }
+      else
+        None
+    }
+
+    def applyModes(arguments: Seq[String]): List[ModeOperation] = {
       val parser = new ModeParser(this, arguments)
       parser.parse match {
-        case Nil => false
-        case xs => anyChange(xs) {
-          case (SetMode, mode, arg)  => setMode(mode, arg)
-          case (UnsetMode, mode, arg) => unsetMode(mode, arg)
-          case (ListMode, _, _) => true
+        case Nil => List()
+        case xs => aggregateOps(xs) {
+          case (SetMode, mode, arg)  => toOp(SetMode, mode, arg)(setMode)
+          case (UnsetMode, mode, arg) => toOp(UnsetMode, mode, arg)(unsetMode)
+          case (ListMode, mode, _) =>
+            Some(ModeOperation(ListMode, mode, getArgs(mode)))
         }
       }
     }
