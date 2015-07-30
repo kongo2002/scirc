@@ -52,10 +52,10 @@ object Modes {
 
   // USER CHANNEL MODES
 
-  case object OperatorMode        extends IrcMode('o')
+  case object OperatorMode          extends IrcMode('o', NArgs)
   // 'channel creator' flag
-  case object LocalOperatorMode   extends IrcMode('O')
-  case object VoiceMode           extends IrcMode('v')
+  case object VoiceMode             extends IrcMode('v', NArgs)
+  case object LocalOperatorMode     extends IrcMode('O', OneArg)
 
   // CHANNEL RELATED MODES
 
@@ -105,8 +105,7 @@ object Modes {
   def toModeString(op: ModeOperation) = {
     def sign = if (op.t == UnsetMode) '-' else '+'
     op.mode.arg match {
-      case NArgs => ""
-      case OneArg if op.args.size > 0 =>
+      case OneArg | NArgs if op.args.nonEmpty =>
         val arg = op.args(0)
         s"${sign}${op.mode.chr} ${arg}"
       case OneArg | NoArg => s"${sign}${op.mode.chr}"
@@ -181,6 +180,13 @@ object Modes {
 
     def isSet(mode: IrcMode): Boolean = contains(mode)
 
+    def containsArg(mode: IrcMode, arg: String): Boolean = {
+      get(mode) match {
+        case Some(args) => args.contains(arg)
+        case None => false
+      }
+    }
+
     def getArgs(mode: IrcMode): List[String] = get(mode) match {
       case Some(x) => x.toList
       case None => List()
@@ -216,6 +222,10 @@ object Modes {
 
   class ChannelModeSet extends ModeSet {
     val modes = channelModes
+
+    def isOp(nick: String) = containsArg(OperatorMode, nick)
+    def isCreator(nick: String) = containsArg(LocalOperatorMode, nick)
+    def isVoice(nick: String) = containsArg(VoiceMode, nick)
   }
 
   class ModeParser(modes: ModeSet, arguments: Seq[String]) {

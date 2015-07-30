@@ -34,7 +34,7 @@ object Response {
 
   case class HostReply(msg: String) extends Reply with SuccessResponse {
     def getMessage(implicit ctx: ClientContext) = {
-      s":${ctx.nick}!${ctx.user}@${ctx.host} $msg"
+      s":${ctx.prefix} $msg"
     }
   }
 

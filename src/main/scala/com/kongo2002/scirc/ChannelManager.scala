@@ -63,7 +63,7 @@ class ChannelManager(server: ServerContext)
     getChannel(channel) match {
       // channel already exists -> just join
       case Some(c) =>
-        c ! UserJoin(nick, client)
+        c ! UserJoin(nick, false, client)
       // new channel -> create a new one
       case None =>
         val channelName = channel.toLowerCase
@@ -73,7 +73,7 @@ class ChannelManager(server: ServerContext)
             Props(ChannelActor(channelName, self, server)))
 
           channels += (channelName -> newChannel)
-          newChannel ! UserJoin(nick, client)
+          newChannel ! UserJoin(nick, true, client)
         } else {
           client.client ! Err(ErrorBadChannelMask(channel), client)
         }

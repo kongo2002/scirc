@@ -26,7 +26,7 @@ object ChannelActor {
     new ChannelActor(name, channelManager, server)
 
   // request messages
-  case class UserJoin(nick: String, client: Client)
+  case class UserJoin(nick: String, creator: Boolean, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
   case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
@@ -106,16 +106,32 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       // set and unset operations may be handled similarly
       case ModeOperationType.SetMode | ModeOperationType.UnsetMode =>
         val modeStr = toModeString(op)
-        client.client ! Msg(HostReply(s"MODE $name $modeStr"), client)
+
+        toAll(s":${client.ctx.prefix} MODE $name $modeStr\r\n")
+        log.info(s"MODE operation: $modeStr")
     }
+  }
+
+  private def nickName(nick: String) = {
+    val isOp = modes.isOp(nick) || modes.isCreator(nick)
+    val isVoice = !isOp && modes.isVoice(nick)
+
+    if (isOp) s"@$nick"
+    else if (isVoice) s"+$nick"
+    else nick
   }
 
   def receive: Receive = {
 
-    case UserJoin(nick, client) =>
+    case UserJoin(nick, creator, client) =>
       if (join(nick, client)) {
+        // if this is a freshly created channel set the 'creator' flag
+        if (creator) {
+          modes.applyModes(List("+Oo", nick, nick))
+        }
+
         // notify the client that he successfully joined the channel
-        val names = members.keys.toList
+        val names = members.keys.map(nickName).toList
         client.client ! ChannelJoined(name, topic, created, names, client)
 
         // notify all members of member join
@@ -152,9 +168,6 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
     case SetChannelModes(channel, args, client) =>
       val applied = modes.applyModes(args)
-      if (!applied.isEmpty)
-        log.debug(s"${name}: new MODE set '${modes.modeString}'")
-
       applied foreach (handleModeResult(_, client))
 
     case ChangeNick(oldNick, newNick, client) =>
