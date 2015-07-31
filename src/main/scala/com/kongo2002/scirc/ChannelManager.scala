@@ -15,9 +15,10 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 import scala.collection.mutable.Map
+import scala.concurrent.duration._
 import scala.util.matching.Regex
 
 object ChannelManager {
@@ -41,9 +42,11 @@ object ChannelManager {
 
 class ChannelManager(server: ServerContext)
   extends Actor
+  with ActorLogging
   with SendActor {
 
   import ChannelActor._
+  import ChannelGatherer._
   import ChannelManager._
   import ClientActor._
   import NickManager._
@@ -106,6 +109,20 @@ class ChannelManager(server: ServerContext)
     case ChannelPart(channel, nick, reason, client) =>
       withChannel(channel, client) { c => c ! UserPart(nick, reason, client) }
 
+    case UserChannels(nick, client) =>
+      var userSender = sender
+
+      if (channels.nonEmpty) {
+        var gather = context.actorOf(Props(
+          ChannelGatherer(channels.values, client, UserInChannel(nick), {
+            case (cs, cl) =>
+              userSender ! UserInChannels(cs, client)
+            })))
+      } else {
+        // no active channels -> no need to gather anything at all
+        userSender ! UserInChannels(List(), client)
+      }
+
     case msg@GetChannelModes(channel, client) =>
       withChannel(channel, client) { c => c forward msg }
 
@@ -127,5 +144,72 @@ class ChannelManager(server: ServerContext)
         case None =>
           // do nothing for now
       }
+  }
+}
+
+object ChannelGatherer {
+  sealed abstract trait GathererResult
+  case class JobResult(result: String) extends GathererResult
+  case object NoResult extends GathererResult
+
+  def apply[T](channels: Iterable[ActorRef],
+      client: Client,
+      message: T,
+      finisher: (List[String], Client) => Unit,
+      timeout: FiniteDuration = 1.seconds) =
+    new ChannelGatherer[T](channels, client, message, finisher, timeout)
+}
+
+class ChannelGatherer[T](channels: Iterable[ActorRef],
+    client: Client,
+    message: T,
+    finisher: (List[String], Client) => Unit,
+    timeout: FiniteDuration = 1.seconds)
+  extends Actor with ActorLogging {
+  import ChannelGatherer._
+
+  implicit val ec = context.dispatcher
+
+  private var results = List.empty[String]
+  private var processed = 0
+
+  case object GatherTimeout
+
+  // send request to all given channels
+  val total = channels.foldLeft(0) { case (cnt, x) =>
+    x ! message
+    cnt + 1
+  }
+
+  val scheduler = context.system.scheduler
+  val gatherTimeout = scheduler.scheduleOnce(timeout, self, GatherTimeout)
+
+  private def sendResults {
+    finisher(results, client)
+    context stop self
+  }
+
+  private def check {
+    if (processed >= total) {
+      gatherTimeout.cancel
+      sendResults
+    }
+  }
+
+  def receive: Receive = {
+    case JobResult(result) =>
+      processed += 1
+      results = result :: results
+
+      check
+
+    case NoResult =>
+      processed += 1
+
+      check
+
+    case GatherTimeout =>
+      log.debug(s"ChannelGatherer timed out after $timeout")
+      sendResults
   }
 }

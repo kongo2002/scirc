@@ -31,10 +31,13 @@ object ChannelActor {
   case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
   case class WhoQuery(channel: String, opOnly: Boolean, client: Client)
+  case class UserChannels(nick: String, client: Client)
+  case class UserInChannel(nick: String)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
   case class ChannelModes(channel: String, modes: String, client: Client)
+  case class UserInChannels(channels: List[String], client: Client)
 }
 
 class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext)
@@ -187,6 +190,12 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
           members += (newNick -> c)
         case None =>
       }
+
+    case UserInChannel(nick) =>
+      if (members.contains(nick))
+        sender ! ChannelGatherer.JobResult(name)
+      else
+        sender ! ChannelGatherer.NoResult
 
     case WhoQuery(channel, opOnly, client) =>
       members.values.foreach { c =>

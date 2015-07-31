@@ -133,6 +133,9 @@ object Response {
   case class ReplyEndOfWhoIsList(nick: String)
     extends SuccessNumericReply(318, s"$nick :End of WHOIS list")
 
+  case class ReplyWhoIsChannels(nick: String, channels: List[String])
+    extends SuccessNumericReply(319, s"$nick :${channels.mkString(" ")}")
+
   // TODO: mode parameters
   case class ReplyChannelModeIs(channel: String, modes: String)
     extends SuccessNumericReply(324, s"$channel $modes")
