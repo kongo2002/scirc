@@ -123,6 +123,9 @@ class ChannelManager(server: ServerContext)
         userSender ! UserInChannels(List(), client)
       }
 
+    case msg@SetTopic(channel, _, client) =>
+      withChannel(channel, client) { c => c forward msg }
+
     case msg@GetChannelModes(channel, client) =>
       withChannel(channel, client) { c => c forward msg }
 

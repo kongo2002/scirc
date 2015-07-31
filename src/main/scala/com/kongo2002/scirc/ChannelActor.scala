@@ -33,6 +33,8 @@ object ChannelActor {
   case class WhoQuery(channel: String, opOnly: Boolean, client: Client)
   case class UserChannels(nick: String, client: Client)
   case class UserInChannel(nick: String)
+  case class SetTopic(channel: String, topic: String, client: Client)
+  case class GetTopic(channel: String, client: Client)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
@@ -196,6 +198,21 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         sender ! ChannelGatherer.JobResult(name)
       else
         sender ! ChannelGatherer.NoResult
+
+    case GetTopic(channel, client) =>
+      client.client ! Msg(ReplyTopic(name, topic), client)
+
+    case SetTopic(channel, topic, client) =>
+      // operator privilege needed
+      if (!modes.isOp(client.ctx.nick)) {
+        client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name), client)
+      } else {
+        // update topic
+        this.topic = topic
+
+        // notify channel members
+        toAll(s":${client.ctx.prefix} TOPIC $name :$topic\r\n")
+      }
 
     case WhoQuery(channel, opOnly, client) =>
       members.values.foreach { c =>

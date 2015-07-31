@@ -90,6 +90,9 @@ object Response {
   case class ErrorBadChannelMask(channel: String)
     extends ErrorNumericReply(476, s"$channel :Bad Channel Mask")
 
+  case class ErrorChannelOperatorPrivilegeNeeded(channel: String)
+    extends ErrorNumericReply(482, s"$channel :You're not channel operator")
+
   case object ErrorUsersDontMatch
     extends ErrorNumericReply(502, ":Cannot change mode for other users")
 
