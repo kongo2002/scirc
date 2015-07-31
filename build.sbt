@@ -4,7 +4,7 @@ version := "1.0"
 
 resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
 
-scalacOptions ++= Seq("-deprecation", "-feature")
+scalacOptions ++= Seq("-deprecation", "-feature", "-unchecked")
 
 libraryDependencies ++= {
   val akkaV = "2.3.11"
