@@ -30,7 +30,11 @@ object Modes {
   }
   import ModeOperationType._
 
-  sealed abstract class IrcMode(val chr: Char, val arg: ModeArgumentType = NoArg)
+  sealed abstract class IrcMode(
+    val chr: Char,
+    val arg: ModeArgumentType = NoArg,
+    val internal: Boolean = false
+  )
 
   case class ModeOperation(t: ModeOperationType, mode: IrcMode, args: List[String])
 
@@ -55,7 +59,7 @@ object Modes {
   case object OperatorMode          extends IrcMode('o', NArgs)
   // 'channel creator' flag
   case object VoiceMode             extends IrcMode('v', NArgs)
-  case object LocalOperatorMode     extends IrcMode('O', OneArg)
+  case object LocalOperatorMode     extends IrcMode('O', OneArg, true)
 
   // CHANNEL RELATED MODES
 
@@ -104,12 +108,15 @@ object Modes {
 
   def toModeString(op: ModeOperation) = {
     def sign = if (op.t == UnsetMode) '-' else '+'
-    op.mode.arg match {
-      case OneArg | NArgs if op.args.nonEmpty =>
-        val arg = op.args(0)
-        s"${sign}${op.mode.chr} ${arg}"
-      case OneArg | NoArg => s"${sign}${op.mode.chr}"
-    }
+
+    if (!op.mode.internal) {
+      op.mode.arg match {
+        case OneArg | NArgs if op.args.nonEmpty =>
+          val arg = op.args(0)
+          s"${sign}${op.mode.chr} ${arg}"
+        case OneArg | NoArg => s"${sign}${op.mode.chr}"
+      }
+    } else ""
   }
 
   abstract class ModeSet extends HashMap[IrcMode, HashSet[String]] {
@@ -130,12 +137,14 @@ object Modes {
         val (ms, as) = acc
         val (key, value) = x
 
-        key.arg match {
-          // do not include list modes in mode string
-          case NArgs => acc
-          case NoArg => (ms + key.chr, as)
-          case OneArg => (ms + key.chr, as ++ value.toList)
-        }
+        if (!key.internal) {
+          key.arg match {
+            // do not include list modes in mode string
+            case NArgs => acc
+            case NoArg => (ms + key.chr, as)
+            case OneArg => (ms + key.chr, as ++ value.toList)
+          }
+        } else acc
       }
 
       if (!args.isEmpty)

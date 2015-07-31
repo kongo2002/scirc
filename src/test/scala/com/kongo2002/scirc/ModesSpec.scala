@@ -154,6 +154,13 @@ class ModesSpec extends FlatSpec with Matchers {
     set.modeString should be ("+l 100")
   }
 
+  it should "not output internal modes" in {
+    val set = channelSet("+lO", "100", "foo")
+
+    set.getArgs(LocalOperatorMode) should be (List("foo"))
+    set.modeString should be ("+l 100")
+  }
+
   it should "replace single argument modes" in {
     val set = channelSet("+l", "100")
 
