@@ -107,7 +107,10 @@ class ClientActor(val server: ServerContext,
     case Tcp.PeerClosed =>
       println("Connection closed")
 
-      disconnect(Client(self, sender, ctx))
+      disconnect(Client(self, sender, ctx), true)
+
+    case Tcp.Closed =>
+      println("Connection closed")
   }
 
   def handleReply: Receive = {

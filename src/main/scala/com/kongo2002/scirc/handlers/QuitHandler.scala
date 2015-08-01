@@ -18,16 +18,21 @@ package com.kongo2002.scirc.handlers
 import com.kongo2002.scirc._
 import com.kongo2002.scirc.Response._
 
+import akka.io.Tcp
+
 trait QuitHandler extends BaseHandler {
   this: ClientActor =>
 
   import ChannelManager._
   import NickManager._
 
-  def disconnect(client: Client) {
+  def disconnect(client: Client, isClosed: Boolean) {
     // unregister nick
     channelManager ! ChannelJoin("0", ctx.nick, client)
     nickManager ! DisconnectNick(ctx.nick)
+
+    if (!isClosed)
+      client.socket ! Tcp.Close
 
     // terminate itself
     context stop self
@@ -39,7 +44,7 @@ trait QuitHandler extends BaseHandler {
     // we are supposed to acknowledge with an ERROR message
     sendError(StringError(s"QUIT ($msg)"), sendTo(client))
 
-    disconnect(client)
+    disconnect(client, false)
     empty
   }
 }
