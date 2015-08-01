@@ -145,6 +145,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
     case UserPart(nick, reason, client) =>
       if (part(nick)) {
+        // 'nick' is not in the channel anymore
+        // that's why the message won't be sent with 'toAll'
+        client.client ! Msg(HostReply(s"PART $name :$reason\r\n"), client)
+
         toAll(s":${client.ctx.prefix} PART $name :$reason\r\n")
       }
       // user is not on the requested channel
