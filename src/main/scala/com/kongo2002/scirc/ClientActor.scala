@@ -71,7 +71,9 @@ class ClientActor(val server: ServerContext,
       ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
       ReplyYourHost(s"Your host is $host, running version $version"),
       ReplyCreated(s"This server was created $time"),
-      // TODO: modes
+      // TODO: ISUPPORT: <http://www.irc.org/tech_docs/005.html>
+      // TODO: LUSERS
+      // TODO: MOTD
       ReplyMyInfo(s"$host $version o o")
       ))
   }
