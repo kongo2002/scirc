@@ -53,12 +53,12 @@ object Response {
   }
 
   // abstract errors
-  abstract trait ErrorResponse
-  abstract class ErrorNumericReply(code: Int, msg: String)
+  sealed abstract trait ErrorResponse
+  sealed abstract class ErrorNumericReply(code: Int, msg: String)
     extends NumericReply(code, msg)
     with ErrorResponse
 
-  case class StringError(msg: String) extends ErrorNumericReply(0, msg)
+  case class StringError(msg: String) extends ErrorResponse
 
   case class ErrorNoSuchNick(nick: String)
     extends ErrorNumericReply(401, s"$nick :No such nick/channel")

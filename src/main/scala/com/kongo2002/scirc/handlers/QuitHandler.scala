@@ -25,19 +25,21 @@ trait QuitHandler extends BaseHandler {
   import NickManager._
 
   def disconnect(client: Client) {
-    // terminate itself
-    context stop self
-
     // unregister nick
     channelManager ! ChannelJoin("0", ctx.nick, client)
     nickManager ! DisconnectNick(ctx.nick)
+
+    // terminate itself
+    context stop self
   }
 
   def handleQuit(op: Operation, client: Client): Response = {
     val msg = op.get(0, "leaving")
 
-    disconnect(client)
+    // we are supposed to acknowledge with an ERROR message
+    sendError(StringError(s"QUIT ($msg)"), sendTo(client))
 
-    Left(StringError(s"QUIT :$msg"))
+    disconnect(client)
+    empty
   }
 }

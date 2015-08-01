@@ -71,7 +71,7 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
   }
 
   def errorResponse(e: ErrorResponse) = e match {
-    case StringError(err) => err + crlf
+    case StringError(err) => s"ERROR :$err$crlf"
     case x: ErrorNumericReply => x.getMessage + crlf
   }
 
