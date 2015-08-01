@@ -198,8 +198,18 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       }
 
     case UserInChannel(nick) =>
-      if (members.contains(nick))
-        sender ! ChannelGatherer.JobResult(name)
+      if (members.contains(nick)) {
+        // determine user's special role(s)
+        val chName =
+          if (modes.isOp(nick))
+            "@" + name
+          else if (modes.isVoice(nick))
+            "+" + name
+          else
+            name
+
+        sender ! ChannelGatherer.JobResult(chName)
+      }
       else
         sender ! ChannelGatherer.NoResult
 
