@@ -39,7 +39,7 @@ trait UserHandler extends BaseHandler {
     case Registered(client) =>
       if (!ctx.isRegistered && ctx.nick != "" && ctx.user != "") {
         ctx.isRegistered = true
-        sendResponse(welcome, sendTo(client))
+        sendMsg(welcome, sendTo(client))
       }
   }
 }

@@ -70,29 +70,9 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
     parse
   }
 
-  def errorResponse(e: ErrorResponse) = e match {
-    case StringError(err) => s"ERROR :$err$crlf"
-    case x: ErrorNumericReply => x.getMessage + crlf
-  }
-
-  def writeResponse(res: SuccessResponse): Option[String] = res match {
-    case EmptyResponse => None
-    case StringResponse(str) => Some(str + crlf)
-    case ListResponse(rs) =>
-      Some(rs.map(writeResponse(_).getOrElse("")).mkString(""))
-    case x: Reply => Some(x.getMessage + crlf)
-  }
-
-  def sendError(e: ErrorResponse, sendFunc: String => Unit): Unit = {
-    sendFunc(errorResponse(e))
-  }
-
   def sendMsg(msg: Reply, sendFunc: String => Unit): Unit = {
-    sendFunc(msg.getMessage + crlf)
-  }
-
-  def sendResponse(res: SuccessResponse, sendFunc: String => Unit): Unit = {
-    writeResponse(res) map (sendFunc)
+    if (msg.hasReply)
+      sendFunc(msg.getMessage)
   }
 
   def send(x: String): Unit = {
@@ -109,8 +89,10 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
     log.debug(s">>> $cmd")
 
     handleCommand(cmd) match {
-      case Right(res) => sendResponse(res, send)
-      case Left(e) => sendError(e, send)
+      case Right(res) => sendMsg(res, send)
+      case Left(e) =>
+        // TODO: log error?
+        sendMsg(e, send)
     }
   }
 

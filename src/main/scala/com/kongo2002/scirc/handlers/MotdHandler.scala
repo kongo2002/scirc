@@ -18,33 +18,26 @@ package com.kongo2002.scirc.handlers
 import com.kongo2002.scirc._
 import com.kongo2002.scirc.Response._
 
-import akka.io.Tcp
-
-trait QuitHandler extends BaseHandler {
+trait MotdHandler extends BaseHandler {
   this: ClientActor =>
 
-  import ChannelManager._
-  import NickManager._
+  def getMotd: Reply = {
+    val motd = getConfigString("motd")
 
-  def disconnect(client: Client, reason: String, isClosed: Boolean) {
-    // unregister nick
-    channelManager ! ChannelQuit(ctx.nick, reason, client)
-    nickManager ! DisconnectNick(ctx.nick)
+    // no MOTD given
+    if (motd.isEmpty)
+      ErrorNoMotd
+    else {
+      val lines = List(ReplyStartMotd(server.host)) ++
+        motd.lines.map(ReplyMotd) :+
+        ReplyEndOfMotd
 
-    if (!isClosed)
-      client.socket ! Tcp.Close
-
-    // terminate itself
-    context stop self
+      ListResponse(lines)
+    }
   }
 
-  def handleQuit(op: Operation, client: Client): Response = {
-    val msg = op.get(0, "leaving")
-
-    // we are supposed to acknowledge with an ERROR message
-    sendMsg(StringError(s"QUIT ($msg)"), sendTo(client))
-
-    disconnect(client, msg, false)
+  def handleMotd(op: Operation, client: Client): Response = {
+    sendMsg(getMotd, sendTo(client))
     empty
   }
 }

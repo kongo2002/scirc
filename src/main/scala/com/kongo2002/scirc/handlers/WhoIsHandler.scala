@@ -53,6 +53,6 @@ trait WhoIsHandler extends BaseHandler {
         ReplyEndOfWhoIsList(nick)
       ))
 
-      sendResponse(reply, sendTo(client))
+      sendMsg(reply, sendTo(client))
   }
 }

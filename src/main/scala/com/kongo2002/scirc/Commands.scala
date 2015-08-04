@@ -54,6 +54,7 @@ object Commands {
   case object ModeCmd    extends OneArgCommand("MODE")
   case object WhoCmd     extends OneArgCommand("WHO")
   case object TopicCmd   extends OneArgCommand("TOPIC")
+  case object MotdCmd    extends NoArgCommand("MOTD")
   case object UserCmd    extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
@@ -69,6 +70,7 @@ object Commands {
     "MODE"    -> ModeCmd,
     "WHO"     -> WhoCmd,
     "TOPIC"   -> TopicCmd,
+    "MOTD"    -> MotdCmd,
     "QUIT"    -> QuitCmd
   )
 

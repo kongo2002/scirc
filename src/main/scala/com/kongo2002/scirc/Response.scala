@@ -20,45 +20,53 @@ import akka.io.Tcp
 import akka.util.ByteString
 
 object Response {
-  // error message
+
+  // ERROR MESSAGE
   case class Err(e: ErrorResponse, client: Client)
 
+  // SUCCESS MESSAGE
   case class Msg(msg: Reply, client: Client)
 
-  // general response
+  // GENERAL RESPONSE
   type Response = Either[ErrorResponse, SuccessResponse]
 
   abstract trait Reply {
+    val crlf = "\r\n"
+    val hasReply = true
     def getMessage(implicit ctx: ClientContext): String
   }
 
   case class HostReply(msg: String) extends Reply with SuccessResponse {
-    def getMessage(implicit ctx: ClientContext) = {
-      s":${ctx.prefix} $msg"
+    override def getMessage(implicit ctx: ClientContext) = {
+      s":${ctx.prefix} $msg$crlf"
     }
   }
 
-  // numeric replies
+  // NUMERIC REPLIES
   abstract class NumericReply(code: Int, msg: String) extends Reply {
 
-    def getMessage(implicit ctx: ClientContext) = {
+    override def getMessage(implicit ctx: ClientContext) = {
       val host = ctx.ctx.host
       val nick = ctx.nick match {
         case "" => "*"
         case n => n
       }
 
-      ":%s %03d %s %s".format(host, code, nick, msg)
+      ":%s %03d %s %s\r\n".format(host, code, nick, msg)
     }
   }
 
-  // abstract errors
-  sealed abstract trait ErrorResponse
+  // ABSTRACT ERRORS
+  sealed abstract trait ErrorResponse extends Reply
   sealed abstract class ErrorNumericReply(code: Int, msg: String)
     extends NumericReply(code, msg)
     with ErrorResponse
 
-  case class StringError(msg: String) extends ErrorResponse
+  case class StringError(msg: String) extends ErrorResponse {
+    override def getMessage(implicit ctx: ClientContext) = {
+      s"ERROR :$msg$crlf"
+    }
+  }
 
   case class ErrorNoSuchNick(nick: String)
     extends ErrorNumericReply(401, s"$nick :No such nick/channel")
@@ -74,6 +82,9 @@ object Response {
 
   case object ErrorNoTextToSend
     extends ErrorNumericReply(412, ":No text to send")
+
+  case object ErrorNoMotd
+    extends ErrorNumericReply(422, ":MOTD File is missing")
 
   case class ErrorErroneousNick(nick: String)
     extends ErrorNumericReply(432, s"$nick :Erroneous nickname")
@@ -96,11 +107,24 @@ object Response {
   case object ErrorUsersDontMatch
     extends ErrorNumericReply(502, ":Cannot change mode for other users")
 
-  // success types
-  abstract trait SuccessResponse
-  case object EmptyResponse              extends SuccessResponse
-  case class StringResponse(msg: String) extends SuccessResponse
-  case class ListResponse(rs: List[SuccessResponse]) extends SuccessResponse
+  // SUCCESS TYPES
+
+  abstract trait SuccessResponse extends Reply
+
+  case object EmptyResponse extends SuccessResponse {
+    override val hasReply = false
+    override def getMessage(implicit ctx: ClientContext) = ""
+  }
+
+  case class StringResponse(msg: String) extends SuccessResponse {
+    override def getMessage(implicit ctx: ClientContext) = msg + crlf
+  }
+
+  case class ListResponse(rs: List[Reply]) extends SuccessResponse {
+    override def getMessage(implicit ctx: ClientContext) = {
+      rs.filter(_.hasReply).map(_.getMessage).mkString("")
+    }
+  }
 
   abstract class SuccessNumericReply(code: Int, msg: String)
     extends NumericReply(code, msg)
@@ -180,4 +204,13 @@ object Response {
 
   case class ReplyEndOfBanList(channel: String)
     extends SuccessNumericReply(368, s"$channel :End of channel ban list")
+
+  case class ReplyMotd(line: String)
+    extends SuccessNumericReply(372, s":- ${line.take(80)}")
+
+  case class ReplyStartMotd(server: String)
+    extends SuccessNumericReply(375, s":- $server Message of the day - ")
+
+  case object ReplyEndOfMotd
+    extends SuccessNumericReply(376, ":End of MOTD command")
 }

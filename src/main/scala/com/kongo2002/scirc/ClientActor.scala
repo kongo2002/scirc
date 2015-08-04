@@ -48,6 +48,7 @@ class ClientActor(val server: ServerContext,
   with PrivMsgHandler
   with TopicHandler
   with WhoHandler
+  with MotdHandler
   with CommandHandler {
 
   import Commands._
@@ -73,9 +74,16 @@ class ClientActor(val server: ServerContext,
       ReplyCreated(s"This server was created $time"),
       // TODO: ISUPPORT: <http://www.irc.org/tech_docs/005.html>
       // TODO: LUSERS
-      // TODO: MOTD
-      ReplyMyInfo(s"$host $version o o")
+      ReplyMyInfo(s"$host $version o o"),
+      getMotd
       ))
+  }
+
+  protected def getConfigString(path: String): String = {
+    val config = context.system.settings.config
+    val fullPath = s"com.kongo2002.scirc.$path"
+
+    config.getString(fullPath)
   }
 
   def handle(op: Operation): Response = {
@@ -93,6 +101,7 @@ class ClientActor(val server: ServerContext,
       case ModeCmd    => handleMode _
       case WhoCmd     => handleWho _
       case TopicCmd   => handleTopic _
+      case MotdCmd    => handleMotd _
       case PongCmd    => noop _
     }
 
@@ -114,7 +123,7 @@ class ClientActor(val server: ServerContext,
   }
 
   def handleReply: Receive = {
-    case Err(e, client) => sendError(e, sendTo(client))
+    case Err(e, client) => sendMsg(e, sendTo(client))
     case Msg(msg, client) => sendMsg(msg, sendTo(client))
   }
 

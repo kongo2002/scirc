@@ -67,6 +67,6 @@ trait ModeHandler extends BaseHandler {
 
   def modeReceive: Receive = {
     case ChannelModes(channel, modes, client) =>
-      sendResponse(ReplyChannelModeIs(channel, modes), sendTo(client))
+      sendMsg(ReplyChannelModeIs(channel, modes), sendTo(client))
   }
 }

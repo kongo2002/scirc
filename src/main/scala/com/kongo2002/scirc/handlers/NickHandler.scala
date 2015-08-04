@@ -54,13 +54,13 @@ trait NickHandler extends BaseHandler {
       else {
         // notify client itself
         val msg = s":$oldNick!${ctx.user}@${ctx.host} NICK $newNick"
-        sendResponse(StringResponse(msg), sendTo(client))
+        sendMsg(StringResponse(msg), sendTo(client))
 
         // notify channels
         channelManager ! ChangeNick(oldNick, newNick, client)
       }
 
     case NickErr(err, client) =>
-      sendError(err, sendTo(client))
+      sendMsg(err, sendTo(client))
   }
 }
