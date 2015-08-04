@@ -26,9 +26,9 @@ trait QuitHandler extends BaseHandler {
   import ChannelManager._
   import NickManager._
 
-  def disconnect(client: Client, isClosed: Boolean) {
+  def disconnect(client: Client, reason: String, isClosed: Boolean) {
     // unregister nick
-    channelManager ! ChannelJoin("0", ctx.nick, client)
+    channelManager ! ChannelQuit(ctx.nick, reason, client)
     nickManager ! DisconnectNick(ctx.nick)
 
     if (!isClosed)
@@ -44,7 +44,7 @@ trait QuitHandler extends BaseHandler {
     // we are supposed to acknowledge with an ERROR message
     sendError(StringError(s"QUIT ($msg)"), sendTo(client))
 
-    disconnect(client, false)
+    disconnect(client, msg, false)
     empty
   }
 }

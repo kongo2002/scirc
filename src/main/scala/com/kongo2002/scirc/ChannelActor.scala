@@ -28,6 +28,7 @@ object ChannelActor {
   // request messages
   case class UserJoin(nick: String, creator: Boolean, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
+  case class UserQuit(nick: String, reason: String, client: Client)
   case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
   case class WhoQuery(channel: String, opOnly: Boolean, client: Client)
@@ -155,6 +156,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       else {
         client.client ! Err(ErrorNotOnChannel(name), client)
       }
+
+    case UserQuit(nick, reason, client) =>
+      if (part(nick))
+        toAll(s":${client.ctx.prefix} QUIT :$reason\r\n")
 
     case PrivMsg(rec, text, from, client) =>
       // check if the user is part of the channel

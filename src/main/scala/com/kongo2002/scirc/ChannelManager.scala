@@ -37,6 +37,7 @@ object ChannelManager {
 
   // request messages
   case class ChannelJoin(channel: String, nick: String, client: Client)
+  case class ChannelQuit(nick: String, reason: String, client: Client)
   case class ChannelPart(channel: String, nick: String, reason: String, client: Client)
 }
 
@@ -105,6 +106,11 @@ class ChannelManager(server: ServerContext)
         partAll(nick, "leaving", client)
       else
         join(channel, nick, client)
+
+    case ChannelQuit(nick, reason, client) =>
+      channels.values.foreach { c =>
+        c ! UserQuit(nick, reason, client)
+      }
 
     case ChannelPart(channel, nick, reason, client) =>
       withChannel(channel, client) { c => c ! UserPart(nick, reason, client) }
