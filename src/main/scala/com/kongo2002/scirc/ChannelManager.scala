@@ -121,7 +121,7 @@ class ChannelManager(server: ServerContext)
       if (channels.nonEmpty) {
         var gather = context.actorOf(Props(
           ChannelGatherer(channels.values, client, UserInChannel(nick), {
-            case (cs, cl) =>
+            (cs: List[String], cl: Client) =>
               userSender ! UserInChannels(cs, client)
             })))
       } else {

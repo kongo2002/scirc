@@ -21,28 +21,28 @@ import scala.concurrent.duration._
 
 object ChannelGatherer {
   sealed abstract trait GathererResult
-  case class JobResult(result: String) extends GathererResult
+  case class JobResult[T](result: T) extends GathererResult
   case object NoResult extends GathererResult
 
-  def apply[T](channels: Iterable[ActorRef],
+  def apply[T, R](channels: Iterable[ActorRef],
       client: Client,
       message: T,
-      finisher: (List[String], Client) => Unit,
+      finisher: (List[R], Client) => Unit,
       timeout: FiniteDuration = 1.seconds) =
-    new ChannelGatherer[T](channels, client, message, finisher, timeout)
+    new ChannelGatherer[T, R](channels, client, message, finisher, timeout)
 }
 
-class ChannelGatherer[T](channels: Iterable[ActorRef],
+class ChannelGatherer[T, R](channels: Iterable[ActorRef],
     client: Client,
     message: T,
-    finisher: (List[String], Client) => Unit,
+    finisher: (List[R], Client) => Unit,
     timeout: FiniteDuration = 1.seconds)
   extends Actor with ActorLogging {
   import ChannelGatherer._
 
   implicit val ec = context.dispatcher
 
-  private var results = List.empty[String]
+  private var results = List.empty[R]
   private var processed = 0
 
   case object GatherTimeout
@@ -69,12 +69,6 @@ class ChannelGatherer[T](channels: Iterable[ActorRef],
   }
 
   def receive: Receive = {
-    case JobResult(result) =>
-      processed += 1
-      results = result :: results
-
-      check
-
     case NoResult =>
       processed += 1
 
@@ -83,5 +77,11 @@ class ChannelGatherer[T](channels: Iterable[ActorRef],
     case GatherTimeout =>
       log.debug(s"ChannelGatherer timed out after $timeout")
       sendResults
+
+    case r: JobResult[R] =>
+      processed += 1
+      results = r.result :: results
+
+      check
   }
 }
