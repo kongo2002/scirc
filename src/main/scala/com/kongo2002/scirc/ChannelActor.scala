@@ -83,15 +83,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     }
   }
 
-  def kick(nick: String) = {
-    members.get(nick) match {
-      case x@Some(_) =>
-        members -= nick
-        x
-      case None =>
-        None
-    }
-  }
+  def kick(nick: String) = members.remove(nick)
 
   def toAll(msg: String) {
     val bytes = ByteString(msg)
