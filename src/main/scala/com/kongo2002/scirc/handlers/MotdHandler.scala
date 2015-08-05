@@ -21,18 +21,32 @@ import com.kongo2002.scirc.Response._
 trait MotdHandler extends BaseHandler {
   this: ClientActor =>
 
+  def readMotd: Option[List[String]] = {
+    try {
+      val source = io.Source.fromFile("motd.txt")
+      val lines = source.getLines.toList
+
+      source.close
+
+      if (lines.nonEmpty)
+        Some(lines)
+      else
+        None
+    } catch {
+      case _: Throwable => None
+    }
+  }
+
   def getMotd: Reply = {
-    val motd = getConfigString("motd")
+    readMotd match {
+      case Some(motd) =>
+        val lines = List(ReplyStartMotd(server.host)) ++
+          motd.map(ReplyMotd) :+
+          ReplyEndOfMotd
 
-    // no MOTD given
-    if (motd.isEmpty)
-      ErrorNoMotd
-    else {
-      val lines = List(ReplyStartMotd(server.host)) ++
-        motd.lines.map(ReplyMotd) :+
-        ReplyEndOfMotd
-
-      ListResponse(lines)
+        ListResponse(lines)
+      case None =>
+        ErrorNoMotd
     }
   }
 
