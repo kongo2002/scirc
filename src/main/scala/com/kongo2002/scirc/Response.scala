@@ -92,6 +92,9 @@ object Response {
   case class ErrorNickAlreadyInUse(nick: String)
     extends ErrorNumericReply(433, s"$nick :Nickname is already in use")
 
+  case class ErrorUserNotInChannel(nick: String, channel: String)
+    extends ErrorNumericReply(441, s"$nick $channel :They aren't on that channel")
+
   case class ErrorNotOnChannel(channel: String)
     extends ErrorNumericReply(442, s"$channel :You're not on that channel")
 

@@ -188,7 +188,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
           // user is not on the requested channel
           case None =>
-            client.client ! Err(ErrorNotOnChannel(name), client)
+            client.client ! Err(ErrorUserNotInChannel(nick, name), client)
         }
       }
 
