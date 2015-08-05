@@ -21,10 +21,10 @@ import com.kongo2002.scirc.Response._
 trait KickHandler extends BaseHandler {
   this: ClientActor =>
 
+  import ChannelManager._
+
   def handleKick(op: Operation, client: Client): Response = {
     // TODO: handle multiple users and/or channels
-
-    import ChannelManager._
 
     var channel = op.get(0)
     var nick = op.get(1)
