@@ -47,6 +47,7 @@ class ClientActor(val server: ServerContext,
   with ModeHandler
   with PrivMsgHandler
   with TopicHandler
+  with ListHandler
   with WhoHandler
   with MotdHandler
   with CommandHandler {
@@ -102,6 +103,7 @@ class ClientActor(val server: ServerContext,
       case WhoCmd     => handleWho _
       case TopicCmd   => handleTopic _
       case MotdCmd    => handleMotd _
+      case ListCmd    => handleList _
       case PongCmd    => noop _
     }
 

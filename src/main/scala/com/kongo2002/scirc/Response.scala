@@ -163,6 +163,12 @@ object Response {
   case class ReplyWhoIsChannels(nick: String, channels: List[String])
     extends SuccessNumericReply(319, s"$nick :${channels.mkString(" ")}")
 
+  case class ReplyList(channel: String, visible: Int, topic: String)
+    extends SuccessNumericReply(322, s"$channel $visible :$topic")
+
+  case object ReplyEndOfList
+    extends SuccessNumericReply(323, ":End of LIST")
+
   // TODO: mode parameters
   case class ReplyChannelModeIs(channel: String, modes: String)
     extends SuccessNumericReply(324, s"$channel $modes")

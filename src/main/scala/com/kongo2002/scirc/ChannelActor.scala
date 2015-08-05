@@ -36,6 +36,8 @@ object ChannelActor {
   case class UserInChannel(nick: String)
   case class SetTopic(channel: String, topic: String, client: Client)
   case class GetTopic(channel: String, client: Client)
+  case class ChannelTopics(client: Client)
+  case object ChannelTopic
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
@@ -220,6 +222,11 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
     case GetTopic(channel, client) =>
       client.client ! Msg(ReplyTopic(name, topic), client)
+
+    case ChannelTopic =>
+      // TODO: select visible members only
+      val visible = members.size
+      sender ! ChannelGatherer.JobResult(ReplyList(name, visible, topic))
 
     case SetTopic(channel, topic, client) =>
       // operator privilege needed

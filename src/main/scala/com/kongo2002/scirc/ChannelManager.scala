@@ -129,6 +129,19 @@ class ChannelManager(server: ServerContext)
         userSender ! UserInChannels(List(), client)
       }
 
+    case ChannelTopics(client: Client) =>
+      var userSender = sender
+
+      if (channels.nonEmpty) {
+        var gather = context.actorOf(Props(
+          ChannelGatherer(channels.values, client, ChannelTopic, {
+            (cs: List[ReplyList], cl: Client) =>
+              cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList), client)
+            })))
+      } else {
+        client.client ! Msg(ReplyEndOfList, client)
+      }
+
     case msg@SetTopic(channel, _, client) =>
       withChannel(channel, client) { c => c forward msg }
 
