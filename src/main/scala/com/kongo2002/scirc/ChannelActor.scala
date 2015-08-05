@@ -29,6 +29,7 @@ object ChannelActor {
   case class UserJoin(nick: String, creator: Boolean, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
   case class UserQuit(nick: String, reason: String, client: Client)
+  case class UserKick(nick: String, reason: String, client: Client)
   case class SetChannelModes(channel: String, modes: Array[String], client: Client)
   case class GetChannelModes(channel: String, client: Client)
   case class WhoQuery(channel: String, opOnly: Boolean, client: Client)
@@ -82,6 +83,16 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     }
   }
 
+  def kick(nick: String) = {
+    members.get(nick) match {
+      case x@Some(_) =>
+        members -= nick
+        x
+      case None =>
+        None
+    }
+  }
+
   def toAll(msg: String) {
     val bytes = ByteString(msg)
     members.values.foreach (send(bytes))
@@ -129,6 +140,14 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     else nick
   }
 
+  private def asOperator(client: Client)(func: => Unit) {
+    if (!modes.isOp(client.ctx.nick)) {
+      client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name), client)
+    } else {
+      func
+    }
+  }
+
   def receive: Receive = {
 
     case UserJoin(nick, creator, client) =>
@@ -162,6 +181,24 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     case UserQuit(nick, reason, client) =>
       if (part(nick))
         toAll(s":${client.ctx.prefix} QUIT :$reason\r\n")
+
+    case UserKick(nick, reason, client) =>
+      asOperator(client) {
+        kick(nick) match {
+          case Some(user) =>
+            val msg = s":${client.ctx.prefix} KICK $name $nick :$reason\r\n"
+
+            // notify kicked user
+            send(ByteString(msg))(user)
+
+            // notify rest of the channel
+            toAll(msg)
+
+          // user is not on the requested channel
+          case None =>
+            client.client ! Err(ErrorNotOnChannel(name), client)
+        }
+      }
 
     case PrivMsg(rec, text, from, client) =>
       // check if the user is part of the channel
@@ -230,9 +267,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
     case SetTopic(channel, topic, client) =>
       // operator privilege needed
-      if (!modes.isOp(client.ctx.nick)) {
-        client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name), client)
-      } else {
+      asOperator(client) {
         // update topic
         this.topic = topic
 

@@ -39,6 +39,7 @@ object ChannelManager {
   case class ChannelJoin(channel: String, nick: String, client: Client)
   case class ChannelQuit(nick: String, reason: String, client: Client)
   case class ChannelPart(channel: String, nick: String, reason: String, client: Client)
+  case class ChannelKick(channel: String, nick: String, reason: String, client: Client)
 }
 
 class ChannelManager(server: ServerContext)
@@ -114,6 +115,9 @@ class ChannelManager(server: ServerContext)
 
     case ChannelPart(channel, nick, reason, client) =>
       withChannel(channel, client) { c => c ! UserPart(nick, reason, client) }
+
+    case ChannelKick(channel, nick, reason, client) =>
+      withChannel(channel, client) { c => c ! UserKick(nick, reason, client) }
 
     case UserChannels(nick, client) =>
       var userSender = sender
