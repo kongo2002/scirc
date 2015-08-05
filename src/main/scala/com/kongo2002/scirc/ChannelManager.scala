@@ -130,8 +130,6 @@ class ChannelManager(server: ServerContext)
       }
 
     case ChannelTopics(client: Client) =>
-      var userSender = sender
-
       if (channels.nonEmpty) {
         var gather = context.actorOf(Props(
           ChannelGatherer(channels.values, client, ChannelTopic, {
