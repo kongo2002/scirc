@@ -15,15 +15,18 @@
 
 package com.kongo2002.scirc
 
-object Modes {
-  import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
+object Modes {
+
+  // argument type enumeration
   object ModeArgumentType extends Enumeration {
     type ModeArgumentType = Value
     val NoArg, OneArg, NArgs = Value
   }
   import ModeArgumentType._
 
+  // mode operation enumeration
   object ModeOperationType extends Enumeration {
     type ModeOperationType = Value
     val SetMode, UnsetMode, ListMode = Value

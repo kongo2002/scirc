@@ -133,7 +133,12 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   }
 
   private def asOperator(client: Client)(func: => Unit) {
-    if (!modes.isOp(client.ctx.nick)) {
+    // check if the issuer is part of the channel at all
+    if (!members.contains(client.ctx.nick)) {
+      client.client ! Err(ErrorNotOnChannel(name), client)
+    }
+    // after that check the necessary operator privileges
+    else if (!modes.isOp(client.ctx.nick)) {
       client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name), client)
     } else {
       func
