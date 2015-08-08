@@ -48,18 +48,20 @@ object Modes {
   case object WallOpsMode         extends IrcMode('w')
   case object RestrictedMode      extends IrcMode('r')
   case object ServerRecipientMode extends IrcMode('s')
+  case object OperatorMode        extends IrcMode('o')
 
   val userModes = toMap(Seq(
     AwayMode,
     InvisibleMode,
     WallOpsMode,
     RestrictedMode,
-    ServerRecipientMode
+    ServerRecipientMode,
+    OperatorMode
   ))
 
   // USER CHANNEL MODES
 
-  case object OperatorMode          extends IrcMode('o', NArgs)
+  case object ChannelOperatorMode   extends IrcMode('o', NArgs)
   // 'channel creator' flag
   case object VoiceMode             extends IrcMode('v', NArgs)
   case object LocalOperatorMode     extends IrcMode('O', OneArg, true)
@@ -83,7 +85,7 @@ object Modes {
 
   val channelModes = toMap(Seq(
     // user related
-    OperatorMode,
+    ChannelOperatorMode,
     LocalOperatorMode,
     VoiceMode,
     // channel related
@@ -235,7 +237,7 @@ object Modes {
   class ChannelModeSet extends ModeSet {
     val modes = channelModes
 
-    def isOp(nick: String) = containsArg(OperatorMode, nick)
+    def isOp(nick: String) = containsArg(ChannelOperatorMode, nick)
     def isCreator(nick: String) = containsArg(LocalOperatorMode, nick)
     def isVoice(nick: String) = containsArg(VoiceMode, nick)
   }

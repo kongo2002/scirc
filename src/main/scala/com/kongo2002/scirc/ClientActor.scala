@@ -20,6 +20,10 @@ import com.kongo2002.scirc.handlers._
 import akka.actor.{Actor, ActorRef}
 import akka.io.Tcp
 
+import com.typesafe.config.Config
+
+import scala.collection.JavaConverters._
+
 import java.net.InetSocketAddress
 
 case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext)
@@ -49,6 +53,7 @@ class ClientActor(val server: ServerContext,
   with TopicHandler
   with ListHandler
   with WhoHandler
+  with OperHandler
   with KickHandler
   with MotdHandler
   with CommandHandler {
@@ -81,32 +86,41 @@ class ClientActor(val server: ServerContext,
       ))
   }
 
-  protected def getConfigString(path: String): String = {
+  protected def getConfig[T](getter: (Config, String) => T)(path: String): T = {
     val config = context.system.settings.config
     val fullPath = s"com.kongo2002.scirc.$path"
 
-    config.getString(fullPath)
+    getter(config, fullPath)
+  }
+
+  protected def getConfigString(path: String): String = {
+    getConfig { (cfg, p) => cfg.getString(p) } (path)
+  }
+
+  protected def getConfigStringList(path: String): List[String] = {
+    getConfig { (cfg, p) => cfg.getStringList(p).asScala.toList } (path)
   }
 
   def handle(op: Operation): Response = {
     val client = Client(self, sender, ctx)
     val handler = op.cmd match {
-      case PingCmd    => handlePing _
-      case NickCmd    => handleNick _
-      case QuitCmd    => handleQuit _
-      case UserCmd    => handleUser _
       case IsonCmd    => handleIson _
       case JoinCmd    => handleJoin _
-      case PartCmd    => handlePart _
-      case PrivMsgCmd => handlePrivMsg _
-      case WhoIsCmd   => handleWhois _
-      case ModeCmd    => handleMode _
-      case WhoCmd     => handleWho _
-      case TopicCmd   => handleTopic _
-      case MotdCmd    => handleMotd _
-      case ListCmd    => handleList _
       case KickCmd    => handleKick _
+      case ListCmd    => handleList _
+      case ModeCmd    => handleMode _
+      case MotdCmd    => handleMotd _
+      case NickCmd    => handleNick _
+      case OperCmd    => handleOper _
+      case PartCmd    => handlePart _
+      case PingCmd    => handlePing _
       case PongCmd    => noop _
+      case PrivMsgCmd => handlePrivMsg _
+      case QuitCmd    => handleQuit _
+      case TopicCmd   => handleTopic _
+      case UserCmd    => handleUser _
+      case WhoCmd     => handleWho _
+      case WhoIsCmd   => handleWhois _
     }
 
     handler(op, client)

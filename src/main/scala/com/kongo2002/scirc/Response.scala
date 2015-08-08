@@ -101,6 +101,9 @@ object Response {
   case class ErrorNeedMoreParams(cmd: String)
     extends ErrorNumericReply(461, s"$cmd :Not enough parameters")
 
+  case object ErrorPasswordMismatch
+    extends ErrorNumericReply(464, ":Password incorrect")
+
   case class ErrorBadChannelMask(channel: String)
     extends ErrorNumericReply(476, s"$channel :Bad Channel Mask")
 
@@ -222,4 +225,7 @@ object Response {
 
   case object ReplyEndOfMotd
     extends SuccessNumericReply(376, ":End of MOTD command")
+
+  case object ReplyYouAreOperator
+    extends SuccessNumericReply(381, ":You are now an IRC operator")
 }
