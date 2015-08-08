@@ -25,10 +25,14 @@ trait JoinHandler extends BaseHandler {
   import ChannelManager._
 
   def handleJoin(op: Operation, client: Client): Response = {
-    // TODO: handle multiple channels
-    // TODO: handle keys
-    var channel = op.get(0)
-    channelManager ! ChannelJoin(channel, ctx.nick, client)
+    val channels = op.get(0).split(",")
+    val numChannels = channels.size
+    val keys = op.get(1).split(",") ++ Iterator.fill(numChannels)("")
+
+    channels.zip(keys).foreach { case (channel, key) =>
+      channelManager ! ChannelJoin(channel, ctx.nick, client)
+    }
+
     empty
   }
 
