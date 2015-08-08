@@ -36,7 +36,7 @@ object ChannelManager {
   }
 
   // request messages
-  case class ChannelJoin(channel: String, nick: String, client: Client)
+  case class ChannelJoin(channel: String, nick: String, key: String, client: Client)
   case class ChannelQuit(nick: String, reason: String, client: Client)
   case class ChannelPart(channel: String, nick: String, reason: String, client: Client)
   case class ChannelKick(channel: String, nick: String, reason: String, client: Client)
@@ -64,11 +64,11 @@ class ChannelManager(server: ServerContext)
     channels.get(ch)
   }
 
-  def join(channel: String, nick: String, client: Client) = {
+  def join(channel: String, nick: String, key: String, client: Client) = {
     getChannel(channel) match {
       // channel already exists -> just join
       case Some(c) =>
-        c ! UserJoin(nick, false, client)
+        c ! UserJoin(nick, false, key, client)
       // new channel -> create a new one
       case None =>
         val channelName = channel.toLowerCase
@@ -78,7 +78,7 @@ class ChannelManager(server: ServerContext)
             Props(ChannelActor(channelName, self, server)))
 
           channels += (channelName -> newChannel)
-          newChannel ! UserJoin(nick, true, client)
+          newChannel ! UserJoin(nick, true, key, client)
         } else {
           client.client ! Err(ErrorBadChannelMask(channel), client)
         }
@@ -102,11 +102,11 @@ class ChannelManager(server: ServerContext)
 
   def receive: Receive = {
 
-    case ChannelJoin(channel, nick, client) =>
+    case ChannelJoin(channel, nick, key, client) =>
       if (channel == "0")
         partAll(nick, "leaving", client)
       else
-        join(channel, nick, client)
+        join(channel, nick, key, client)
 
     case ChannelQuit(nick, reason, client) =>
       channels.values.foreach { c =>

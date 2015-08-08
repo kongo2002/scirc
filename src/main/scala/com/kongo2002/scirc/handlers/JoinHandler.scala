@@ -30,7 +30,7 @@ trait JoinHandler extends BaseHandler {
     val keys = op.get(1).split(",") ++ Iterator.fill(numChannels)("")
 
     channels.zip(keys).foreach { case (channel, key) =>
-      channelManager ! ChannelJoin(channel, ctx.nick, client)
+      channelManager ! ChannelJoin(channel, ctx.nick, key, client)
     }
 
     empty

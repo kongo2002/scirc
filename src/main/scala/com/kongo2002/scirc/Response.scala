@@ -104,6 +104,9 @@ object Response {
   case object ErrorPasswordMismatch
     extends ErrorNumericReply(464, ":Password incorrect")
 
+  case class ErrorBadChannelKey(channel: String)
+    extends ErrorNumericReply(475, s"$channel :Cannot join channel (+k)")
+
   case class ErrorBadChannelMask(channel: String)
     extends ErrorNumericReply(476, s"$channel :Bad Channel Mask")
 

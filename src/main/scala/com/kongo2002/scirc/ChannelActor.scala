@@ -26,7 +26,7 @@ object ChannelActor {
     new ChannelActor(name, channelManager, server)
 
   // request messages
-  case class UserJoin(nick: String, creator: Boolean, client: Client)
+  case class UserJoin(nick: String, creator: Boolean, key: String, client: Client)
   case class UserPart(nick: String, reason: String, client: Client)
   case class UserQuit(nick: String, reason: String, client: Client)
   case class UserKick(nick: String, reason: String, client: Client)
@@ -92,6 +92,15 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
   def partOf(nick: String) = !members.get(nick).isEmpty
 
+  def checkKey(key: String) = {
+    modes.getArgs(ChannelKeyMode) match {
+      case List(k) if k == key => true
+      // no key defined at all
+      case Nil => true
+      case _ => false
+    }
+  }
+
   def handleModeResult(op: ModeOperation, client: Client) = {
     op.t match {
       // list requests
@@ -147,8 +156,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
   def receive: Receive = {
 
-    case UserJoin(nick, creator, client) =>
-      if (join(nick, client)) {
+    case UserJoin(nick, creator, key, client) =>
+      if (!checkKey(key))
+        client.client ! Err(ErrorBadChannelKey(name), client)
+      else if (join(nick, client)) {
         // if this is a freshly created channel set the 'creator' flag
         if (creator) {
           modes.applyModes(List("+Oo", nick, nick))
