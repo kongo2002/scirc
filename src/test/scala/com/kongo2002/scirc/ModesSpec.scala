@@ -136,6 +136,32 @@ class ModesSpec extends FlatSpec with Matchers {
     set.getArgs(BanMaskMode) should be (List("bar"))
   }
 
+  it should "remove channel key #1" in {
+    val set = channelSet("+k", "secret")
+
+    set.getArgs(ChannelKeyMode) should be (List("secret"))
+
+    set.applyModes(List("-k"))
+
+    set.isSet(ChannelKeyMode) should be (false)
+    set.getArgs(ChannelKeyMode) should be (Nil)
+    set.modeString should be ("+")
+
+  }
+
+  it should "remove channel key #2" in {
+    val set = channelSet("+k", "secret")
+
+    set.getArgs(ChannelKeyMode) should be (List("secret"))
+
+    set.applyModes(List("-k", "secret"))
+
+    set.isSet(ChannelKeyMode) should be (false)
+    set.getArgs(ChannelKeyMode) should be (Nil)
+    set.modeString should be ("+")
+
+  }
+
   it should "output a basic mode string" in {
     val set = channelSet("+a")
 

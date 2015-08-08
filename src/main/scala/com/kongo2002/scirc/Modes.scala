@@ -182,7 +182,16 @@ object Modes {
     def unsetMode(mode: IrcMode, arg: String): Boolean = {
       if (arg != "") {
         get(mode) match {
-          case Some(v) => update(mode, v -= arg); true
+          case Some(v) =>
+            val newArgs = v -= arg
+
+            // remove mode completely if the arguments are now empty
+            if (newArgs.isEmpty)
+              remove(mode)
+            else
+              update(mode, newArgs)
+
+            true
           case None => false
         }
       } else {
