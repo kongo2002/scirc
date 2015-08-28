@@ -23,12 +23,18 @@ trait NickHandler extends BaseHandler {
 
   import NickManager._
 
+  /**
+   * Process the 'NICK' operation
+   * @param op operation to process
+   * @param client client information
+   * @return [[com.kongo2002.scirc.Response]] type
+   */
   def handleNick(op: Operation, client: Client): Response = {
     val newNick = op.get(0)
     val nick = ctx.nick
 
     if (nick != newNick) {
-      val isNew = nick == ""
+      val isNew = nick.isEmpty
 
       if (isNew)
         nickManager ! RegisterNick(newNick, client)

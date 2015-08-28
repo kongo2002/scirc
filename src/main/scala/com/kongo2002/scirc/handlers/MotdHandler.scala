@@ -24,9 +24,9 @@ trait MotdHandler extends BaseHandler {
   def readMotd: Option[List[String]] = {
     try {
       val source = io.Source.fromFile("motd.txt")
-      val lines = source.getLines.toList
+      val lines = source.getLines().toList
 
-      source.close
+      source.close()
 
       if (lines.nonEmpty)
         Some(lines)

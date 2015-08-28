@@ -15,10 +15,21 @@
 
 package com.kongo2002.scirc
 
+/**
+ * Server context information
+ * @param host server host name
+ * @param modes server modes
+ */
 case class ServerContext(host: String, modes: Int) {
   val created = java.util.Calendar.getInstance().getTime()
 }
 
+/**
+ * Client context information
+ * @param ctx server context
+ * @param host client's host name
+ * @param nick client's nick name
+ */
 case class ClientContext(ctx: ServerContext, host: String, var nick: String) {
   var user = ""
   var realname = ""

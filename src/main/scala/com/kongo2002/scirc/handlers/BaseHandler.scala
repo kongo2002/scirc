@@ -18,15 +18,19 @@ package com.kongo2002.scirc.handlers
 import com.kongo2002.scirc._
 import com.kongo2002.scirc.Response._
 
-abstract trait BaseHandler {
+trait BaseHandler {
   this: ClientActor =>
 
+  /** successful empty response */
   val empty = Right(EmptyResponse)
 
+  /** generate a successful string response */
   def success(response: String) = Right(StringResponse(response))
 
+  /** no-operation handler with an empty response (@see [[empty]]) */
   def noop(op: Operation, client: Client): Response = empty
 
+  /** generate a host reply (i.e. ':some.host reply') */
   def hostReply(reply: String) =
     success(s":${server.host} $reply")
 }

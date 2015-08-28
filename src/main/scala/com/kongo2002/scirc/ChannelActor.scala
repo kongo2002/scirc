@@ -16,7 +16,6 @@
 package com.kongo2002.scirc
 
 import akka.actor.{Actor, ActorRef, ActorLogging}
-import akka.io.Tcp
 import akka.util.ByteString
 
 import scala.collection.mutable.Map
@@ -63,7 +62,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   val modes = new Modes.ChannelModeSet
 
   // TODO: a persisted channel might be created earlier
-  val created = java.util.Calendar.getInstance().getTime()
+  val created = java.util.Calendar.getInstance().getTime
 
   def join(nick: String, client: Client) = {
     if (!members.contains(nick)) {
@@ -90,7 +89,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     members.values.foreach (send(bytes))
   }
 
-  def partOf(nick: String) = !members.get(nick).isEmpty
+  def partOf(nick: String) = members.get(nick).isDefined
 
   def checkKey(key: String) = {
     modes.getArgs(ChannelKeyMode) match {
@@ -273,14 +272,14 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       val visible = members.size
       sender ! ChannelGatherer.JobResult(ReplyList(name, visible, topic))
 
-    case SetTopic(channel, topic, client) =>
+    case SetTopic(channel, topc, client) =>
       // operator privilege needed
       asOperator(client) {
         // update topic
-        this.topic = topic
+        this.topic = topc
 
         // notify channel members
-        toAll(s":${client.ctx.prefix} TOPIC $name :$topic\r\n")
+        toAll(s":${client.ctx.prefix} TOPIC $name :$topc\r\n")
       }
 
     case WhoQuery(channel, opOnly, client) =>
@@ -289,7 +288,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
         val info = Info.UserWhoInfo(c.ctx,
           channel,
-          false, // TODO: away
+          away = false, // TODO: away
           "H" // TODO: modes
         )
 

@@ -44,7 +44,7 @@ trait QuitHandler extends BaseHandler {
     // we are supposed to acknowledge with an ERROR message
     sendMsg(StringError(s"QUIT ($msg)"), sendTo(client))
 
-    disconnect(client, msg, false)
+    disconnect(client, msg, isClosed = false)
     empty
   }
 }

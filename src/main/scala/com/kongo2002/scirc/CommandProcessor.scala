@@ -15,21 +15,19 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef, ActorLogging}
+import akka.actor.{Actor, ActorLogging}
 import akka.event.LoggingReceive
-import akka.io.{IO, Tcp}
+import akka.io.Tcp
 import akka.util.ByteString
-
-import scala.util.{Try, Success, Failure}
 
 import Response._
 
-abstract trait CommandHandler {
+trait CommandHandler {
   def handleCommand(cmd: String): Response
   implicit val ctx: ClientContext
 }
 
-abstract trait CommandProcessor extends Actor with ActorLogging {
+trait CommandProcessor extends Actor with ActorLogging {
   this: CommandHandler =>
 
   val crlf = "\r\n"
@@ -42,12 +40,12 @@ abstract trait CommandProcessor extends Actor with ActorLogging {
       val to = buffer.indexOf(crlf, idx)
       if (to > 0) {
         val cmd = buffer.slice(idx, to)
-        idx = to + crlf.size
+        idx = to + crlf.length
         Some(cmd.stripLineEnd)
       }
       // empty line
       else if (to == 0) {
-        buffer.delete(0, crlf.size)
+        buffer.delete(0, crlf.length)
         Some("")
       }
       else {

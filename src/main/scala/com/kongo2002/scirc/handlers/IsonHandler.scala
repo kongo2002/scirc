@@ -30,6 +30,6 @@ trait IsonHandler extends BaseHandler {
 
   def isonReceive: Receive = {
     case NicksOnline(ns, rec) =>
-      sendMsg(ReplyIson(ns.mkString(" ")), (sendTo(rec)))
+      sendMsg(ReplyIson(ns.mkString(" ")), sendTo(rec))
   }
 }

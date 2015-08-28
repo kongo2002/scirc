@@ -20,7 +20,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef}
 import scala.concurrent.duration._
 
 object ChannelGatherer {
-  sealed abstract trait GathererResult
+  sealed trait GathererResult
   case class JobResult[T](result: T) extends GathererResult
   case object NoResult extends GathererResult
 
@@ -56,15 +56,15 @@ class ChannelGatherer[T, R](channels: Iterable[ActorRef],
   val scheduler = context.system.scheduler
   val gatherTimeout = scheduler.scheduleOnce(timeout, self, GatherTimeout)
 
-  private def sendResults {
+  private def sendResults() {
     finisher(results, client)
     context stop self
   }
 
-  private def check {
+  private def check() {
     if (processed >= total) {
-      gatherTimeout.cancel
-      sendResults
+      gatherTimeout.cancel()
+      sendResults()
     }
   }
 
@@ -72,16 +72,16 @@ class ChannelGatherer[T, R](channels: Iterable[ActorRef],
     case NoResult =>
       processed += 1
 
-      check
+      check()
 
     case GatherTimeout =>
       log.debug(s"ChannelGatherer timed out after $timeout")
-      sendResults
+      sendResults()
 
     case r: JobResult[R] =>
       processed += 1
       results = r.result :: results
 
-      check
+      check()
   }
 }

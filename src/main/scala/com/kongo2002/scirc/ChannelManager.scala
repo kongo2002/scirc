@@ -18,7 +18,6 @@ package com.kongo2002.scirc
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 import scala.collection.mutable.Map
-import scala.concurrent.duration._
 import scala.util.matching.Regex
 
 object ChannelManager {
@@ -48,7 +47,6 @@ class ChannelManager(server: ServerContext)
   with SendActor {
 
   import ChannelActor._
-  import ChannelGatherer._
   import ChannelManager._
   import ClientActor._
   import NickManager._
@@ -68,7 +66,7 @@ class ChannelManager(server: ServerContext)
     getChannel(channel) match {
       // channel already exists -> just join
       case Some(c) =>
-        c ! UserJoin(nick, false, key, client)
+        c ! UserJoin(nick, creator = false, key, client)
       // new channel -> create a new one
       case None =>
         val channelName = channel.toLowerCase
@@ -78,7 +76,7 @@ class ChannelManager(server: ServerContext)
             Props(ChannelActor(channelName, self, server)))
 
           channels += (channelName -> newChannel)
-          newChannel ! UserJoin(nick, true, key, client)
+          newChannel ! UserJoin(nick, creator = true, key, client)
         } else {
           client.client ! Err(ErrorBadChannelMask(channel), client)
         }
@@ -120,7 +118,7 @@ class ChannelManager(server: ServerContext)
       withChannel(channel, client) { c => c ! UserKick(nick, reason, client) }
 
     case UserChannels(nick, client) =>
-      var userSender = sender
+      val userSender = sender
 
       if (channels.nonEmpty) {
         var gather = context.actorOf(Props(
@@ -135,7 +133,7 @@ class ChannelManager(server: ServerContext)
 
     case ChannelTopics(client: Client) =>
       if (channels.nonEmpty) {
-        var gather = context.actorOf(Props(
+        val gather = context.actorOf(Props(
           ChannelGatherer(channels.values, client, ChannelTopic, {
             (cs: List[ReplyList], cl: Client) =>
               cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList), client)

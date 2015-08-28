@@ -71,7 +71,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
     case ChangeNick(from, to, client) =>
       nicks.get(from) match {
         case Some(ref) =>
-          val exists = !nicks.get(to).isEmpty
+          val exists = nicks.get(to).isDefined
 
           // nick already exists
           if (exists)
@@ -97,7 +97,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
       }
 
     case RegisterNick(nick, client) =>
-      val exists = !nicks.get(nick).isEmpty
+      val exists = nicks.get(nick).isDefined
 
       if (exists)
         sender ! NickErr(ErrorNickAlreadyInUse(nick), client)
@@ -121,7 +121,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
         }
       }
 
-      if (!online.isEmpty)
+      if (online.nonEmpty)
         sender ! NicksOnline(online, client)
 
     case WhoIsNicks(ns, client) =>

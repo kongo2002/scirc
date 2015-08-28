@@ -33,7 +33,7 @@ class Server(listen: URI, hostname: String) extends Actor {
 
   IO(Tcp)(context.system) ! Tcp.Bind(self, new InetSocketAddress(host, port))
 
-  override def preStart = {
+  override def preStart() = {
     nickManager = context.actorOf(Props[NickManager], "nickmanager")
     channelManager = context.actorOf(Props(ChannelManager(ctx)), "channelmanager")
   }
@@ -60,7 +60,7 @@ object Server {
 
   def main(args: Array[String]) = {
     // TODO: configuration
-    var hostname = "localhost"
+    val hostname = "localhost"
     val port = getPort(args)
 
     val system = ActorSystem("scirc")

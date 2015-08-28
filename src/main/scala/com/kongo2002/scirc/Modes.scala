@@ -15,6 +15,7 @@
 
 package com.kongo2002.scirc
 
+import scala.annotation.tailrec
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 
 object Modes {
@@ -117,9 +118,9 @@ object Modes {
     if (!op.mode.internal) {
       op.mode.arg match {
         case OneArg | NArgs if op.args.nonEmpty =>
-          val arg = op.args(0)
-          s"${sign}${op.mode.chr} ${arg}"
-        case OneArg | NoArg => s"${sign}${op.mode.chr}"
+          val arg = op.args.head
+          s"$sign${op.mode.chr} $arg"
+        case OneArg | NoArg => s"$sign${op.mode.chr}"
       }
     } else ""
   }
@@ -152,7 +153,7 @@ object Modes {
         } else acc
       }
 
-      if (!args.isEmpty)
+      if (args.nonEmpty)
         "+" + modes + " " + args.mkString(" ")
       else
         "+" + modes
@@ -290,7 +291,7 @@ object Modes {
           Some((set, mode, ""))
         // one or N argument mode
         case Some(mode) =>
-          if (args.size > 0)
+          if (args.nonEmpty)
             Some((set, mode, args.remove(0)))
           else if (mode.arg == NArgs)
             Some((ListMode, mode, ""))
@@ -308,8 +309,8 @@ object Modes {
       // no mode set yet
       case Nil =>
         // arguments left?
-        if (args.size > 0) {
-          mode = args(0).toList
+        if (args.nonEmpty) {
+          mode = args.head.toList
           args.remove(0)
           Some(mode)
         } else None

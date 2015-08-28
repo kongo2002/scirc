@@ -26,11 +26,11 @@ trait KickHandler extends BaseHandler {
   def handleKick(op: Operation, client: Client): Response = {
     // TODO: handle multiple users and/or channels
 
-    var channel = op.get(0)
-    var nick = op.get(1)
+    val channel = op.get(0)
+    val nick = op.get(1)
 
     // default reason is the nick of the user issuing the KICK
-    var reason = op.get(2, ctx.nick)
+    val reason = op.get(2, ctx.nick)
 
     channelManager ! ChannelKick(channel, nick, reason, client)
     empty

@@ -15,13 +15,15 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.Actor
-import akka.util.ByteString
-
+/**
+ * Base operation class that encapsulates all commands
+ * @param cmd command name
+ * @param args command arguments
+ */
 case class Operation(cmd: Command, args: Array[String]) {
   def get(idx: Int): String = get(idx, "")
   def get(idx: Int, default: String): String = {
-    if (idx < args.size) args(idx) else default
+    if (idx < args.length) args(idx) else default
   }
   def getInt(idx: Int): Option[Int] = {
     try {
@@ -33,7 +35,7 @@ case class Operation(cmd: Command, args: Array[String]) {
 }
 
 sealed abstract class Command(cmd: String, numArgs: Int) {
-  def validate(input: Array[String]) = input.size >= numArgs
+  def validate(input: Array[String]) = input.length >= numArgs
 }
 
 sealed abstract class NoArgCommand(cmd: String) extends Command(cmd, 0)
@@ -82,14 +84,14 @@ object Commands {
 
   def getArguments(args: List[String]): Array[String] = args match {
     case Nil => Array()
-    case args :: _ =>
-      if (args.size > 0 && args(0) == ':')
-        Array(args.drop(1))
+    case as :: _ =>
+      if (as.nonEmpty && as(0) == ':')
+        Array(as.drop(1))
       else {
-        Utils.splitFirst(args, " :") match {
+        Utils.splitFirst(as, " :") match {
           case List(fst, rest) =>
             fst.split(" ") :+ rest
-          case _ => args.split(" ")
+          case _ => as.split(" ")
         }
       }
   }

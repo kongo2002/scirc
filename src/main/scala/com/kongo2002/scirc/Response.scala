@@ -30,7 +30,7 @@ object Response {
   // GENERAL RESPONSE
   type Response = Either[ErrorResponse, SuccessResponse]
 
-  abstract trait Reply {
+  trait Reply {
     val crlf = "\r\n"
     val hasReply = true
     def getMessage(implicit ctx: ClientContext): String
@@ -57,7 +57,7 @@ object Response {
   }
 
   // ABSTRACT ERRORS
-  sealed abstract trait ErrorResponse extends Reply
+  sealed trait ErrorResponse extends Reply
   sealed abstract class ErrorNumericReply(code: Int, msg: String)
     extends NumericReply(code, msg)
     with ErrorResponse
@@ -118,7 +118,7 @@ object Response {
 
   // SUCCESS TYPES
 
-  abstract trait SuccessResponse extends Reply
+  trait SuccessResponse extends Reply
 
   case object EmptyResponse extends SuccessResponse {
     override val hasReply = false

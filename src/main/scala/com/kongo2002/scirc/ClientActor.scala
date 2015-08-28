@@ -15,19 +15,26 @@
 
 package com.kongo2002.scirc
 
-import com.kongo2002.scirc.handlers._
+import java.net.InetSocketAddress
 
-import akka.actor.{Actor, ActorRef}
+import akka.actor.ActorRef
 import akka.io.Tcp
-
+import com.kongo2002.scirc.handlers._
 import com.typesafe.config.Config
 
 import scala.collection.JavaConverters._
 
-import java.net.InetSocketAddress
-
+/**
+ * Client base case class
+ * @param client client actor
+ * @param socket underlying socket actor
+ * @param ctx client's context information
+ */
 case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext)
 
+/**
+ * Client actor's companion object
+ */
 object ClientActor {
   def apply(server: ServerContext, remote: InetSocketAddress, nickManager: ActorRef, channelManager: ActorRef) =
     new ClientActor(server, remote, nickManager, channelManager)
@@ -35,6 +42,13 @@ object ClientActor {
   case class PrivMsg(recipient: String, text: String, from: String, client: Client)
 }
 
+/**
+ * Main client actor class
+ * @param server server context
+ * @param remote remote address
+ * @param nickManager associated nick manager
+ * @param channelManager associated channel manager
+ */
 class ClientActor(val server: ServerContext,
     remote: InetSocketAddress,
     val nickManager: ActorRef,
@@ -59,11 +73,9 @@ class ClientActor(val server: ServerContext,
   with CommandHandler {
 
   import Commands._
-  import ChannelManager._
-  import NickManager._
   import Response._
 
-  val remoteHost = remote.getHostString()
+  val remoteHost = remote.getHostString
   implicit val ctx = ClientContext(server, remoteHost, "")
 
   def welcome = {
@@ -71,9 +83,9 @@ class ClientActor(val server: ServerContext,
     val version = "scirc-0.1"
     val host = server.host
     val nick = ctx.nick
-    val df = java.text.DateFormat.getDateInstance()
+    val df = java.text.DateFormat.getDateInstance
     val tz = java.util.TimeZone.getTimeZone("UTC")
-    val time = df.format(server.created)
+    val time = df.format(server.created, tz)
 
     ListResponse(List(
       ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
@@ -134,7 +146,7 @@ class ClientActor(val server: ServerContext,
     case Tcp.PeerClosed =>
       println("Connection closed")
 
-      disconnect(Client(self, sender, ctx), "leaving", true)
+      disconnect(Client(self, sender, ctx), "leaving", isClosed = true)
 
     case Tcp.Closed =>
       println("Connection closed")
