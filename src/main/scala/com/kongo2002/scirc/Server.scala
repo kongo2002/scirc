@@ -41,14 +41,15 @@ class Server(listen: URI, hostname: String) extends Actor {
   def receive: Receive = LoggingReceive {
     case Tcp.Connected(rem, _) =>
       sender ! Tcp.Register(context.actorOf(
-        Props(ClientActor(ctx, rem, nickManager, channelManager))))
+        ClientActor.props(ctx, rem, nickManager, channelManager)))
   }
 }
 
 object Server {
-  def apply(port: Int, hostname: String) = {
+
+  def props(hostname: String, port: Int = 6667) = {
     val uri = new URI(s"http://127.0.0.1:$port")
-    new Server(uri, hostname)
+    Props(new Server(uri, hostname))
   }
 
   def getPort(str: Array[String]) = {
@@ -64,7 +65,7 @@ object Server {
     val port = getPort(args)
 
     val system = ActorSystem("scirc")
-    val server = system.actorOf(Props(Server(port, hostname)), "server")
+    val server = system.actorOf(props(hostname, port), "server")
 
     println(s"scirc running on port $port")
 

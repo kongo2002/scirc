@@ -17,7 +17,7 @@ package com.kongo2002.scirc
 
 import java.net.InetSocketAddress
 
-import akka.actor.ActorRef
+import akka.actor.{Props, ActorRef}
 import akka.io.Tcp
 import com.kongo2002.scirc.handlers._
 import com.typesafe.config.Config
@@ -36,8 +36,8 @@ case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext)
  * Client actor's companion object
  */
 object ClientActor {
-  def apply(server: ServerContext, remote: InetSocketAddress, nickManager: ActorRef, channelManager: ActorRef) =
-    new ClientActor(server, remote, nickManager, channelManager)
+  def props(server: ServerContext, remote: InetSocketAddress, nickManager: ActorRef, channelManager: ActorRef) =
+    Props(new ClientActor(server, remote, nickManager, channelManager))
 
   case class PrivMsg(recipient: String, text: String, from: String, client: Client)
 }

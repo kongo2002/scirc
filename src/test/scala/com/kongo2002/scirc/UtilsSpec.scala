@@ -3,7 +3,6 @@ package com.kongo2002.scirc
 import org.scalatest.{FlatSpec, Matchers}
 
 class UtilsSpec extends FlatSpec with Matchers {
-
   import Utils._
 
   "splitFirst" should "work on empty string" in {
