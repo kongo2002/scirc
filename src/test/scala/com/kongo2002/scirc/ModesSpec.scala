@@ -78,17 +78,17 @@ class ModesSpec extends FlatSpec with Matchers {
 
   it should "parse multiple modes with arguments" in {
     channel("bI", "foo", "bar") should be
-      (List((SetMode, BanMaskMode, "foo"), (true, InvitationMaskMode, "bar")))
+      List((SetMode, BanMaskMode, "foo"), (true, InvitationMaskMode, "bar"))
   }
 
   it should "parse multiple modes with arguments with different signs" in {
     channel("+b-I", "foo", "bar") should be
-      (List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar")))
+      List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar"))
   }
 
   it should "parse multiple modes with arguments with different signs in another order" in {
     channel("+b", "foo", "-I", "bar") should be
-      (List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar")))
+      List((SetMode, BanMaskMode, "foo"), (UnsetMode, InvitationMaskMode, "bar"))
   }
 
   "UserModeSet" should "apply a mode" in {

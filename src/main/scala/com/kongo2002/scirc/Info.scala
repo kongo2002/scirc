@@ -16,6 +16,14 @@
 package com.kongo2002.scirc
 
 object Info {
+
+  /**
+   * User information used for WHO command
+   * @param ctx client context
+   * @param channel channel name
+   * @param away currently away?
+   * @param modes current mode string
+   */
   case class UserWhoInfo(ctx: ClientContext,
     channel: String,
     away: Boolean,

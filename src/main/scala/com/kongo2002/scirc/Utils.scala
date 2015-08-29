@@ -28,7 +28,17 @@ object Utils {
       List(input)
     else {
       val (fst, snd) = input.splitAt(idx)
-      List(fst, snd.drop(at.length))
+
+      val rest =
+        if (snd.length > at.length)
+          List(snd.drop(at.length))
+        else
+          Nil
+
+      if (fst.isEmpty)
+        rest
+      else
+        fst :: rest
     }
   }
 }
