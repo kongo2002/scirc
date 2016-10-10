@@ -15,15 +15,18 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import akka.event.LoggingReceive
 import akka.io.{IO, Tcp}
 
 import scala.concurrent.duration._
-
 import java.net.{InetSocketAddress, URI}
 
-class Server(listen: URI, hostname: String) extends Actor {
+import kamon.Kamon
+
+import scala.concurrent.Await
+
+class Server(listen: URI, hostname: String) extends Actor with ActorLogging {
   val host = listen.getHost
   val port = listen.getPort
   val ctx = ServerContext(hostname, 0)
@@ -35,11 +38,13 @@ class Server(listen: URI, hostname: String) extends Actor {
 
   override def preStart() = {
     nickManager = context.actorOf(Props[NickManager], "nickmanager")
-    channelManager = context.actorOf(Props(ChannelManager(ctx)), "channelmanager")
+    channelManager = context.actorOf(ChannelManager.props(ctx), "channelmanager")
   }
 
   def receive: Receive = LoggingReceive {
     case Tcp.Connected(rem, _) =>
+      log.debug(s"accepted new connection from '$rem'")
+
       sender ! Tcp.Register(context.actorOf(
         ClientActor.props(ctx, rem, nickManager, channelManager)))
   }
@@ -60,6 +65,8 @@ object Server {
   }
 
   def main(args: Array[String]) = {
+    Kamon.start()
+
     // TODO: configuration
     val hostname = "localhost"
     val port = getPort(args)
@@ -69,6 +76,7 @@ object Server {
 
     println(s"scirc running on port $port")
 
-    system.awaitTermination(Duration.Inf)
+    Await.result(system.whenTerminated, Duration.Inf)
+    Kamon.shutdown()
   }
 }

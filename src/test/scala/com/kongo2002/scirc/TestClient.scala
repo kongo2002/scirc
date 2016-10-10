@@ -15,7 +15,7 @@ abstract class TestClient(systemName: String) extends TestKit(ActorSystem(system
   val remote = new InetSocketAddress("localhost", 6667)
 
   val nickManager = system.actorOf(Props[NickManager], "nickmanager")
-  val channelManager = system.actorOf(Props(ChannelManager(ctx)), "channelmanager")
+  val channelManager = system.actorOf(ChannelManager.props(ctx), "channelmanager")
 
   val client = system.actorOf(ClientActor.props(ctx, remote, nickManager, channelManager))
 

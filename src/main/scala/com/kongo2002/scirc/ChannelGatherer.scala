@@ -15,6 +15,7 @@
 
 package com.kongo2002.scirc
 
+import akka.actor.Props
 import akka.actor.{Actor, ActorLogging, ActorRef}
 
 import scala.concurrent.duration._
@@ -24,12 +25,12 @@ object ChannelGatherer {
   case class JobResult[T](result: T) extends GathererResult
   case object NoResult extends GathererResult
 
-  def apply[T, R](channels: Iterable[ActorRef],
+  def props[T, R](channels: Iterable[ActorRef],
       client: Client,
       message: T,
       finisher: (List[R], Client) => Unit,
-      timeout: FiniteDuration = 1.seconds) =
-    new ChannelGatherer[T, R](channels, client, message, finisher, timeout)
+      timeout: FiniteDuration = 1.seconds): Props =
+    Props(new ChannelGatherer(channels, client, message, finisher, timeout))
 }
 
 class ChannelGatherer[T, R](channels: Iterable[ActorRef],

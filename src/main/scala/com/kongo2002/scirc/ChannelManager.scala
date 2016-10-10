@@ -16,13 +16,13 @@
 package com.kongo2002.scirc
 
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import kamon.Kamon
 
-import scala.collection.mutable.Map
 import scala.util.matching.Regex
 
 object ChannelManager {
-  def apply(server: ServerContext) =
-    new ChannelManager(server)
+  def props(server: ServerContext): Props =
+    Props(new ChannelManager(server))
 
   // TODO: this regex is not 100% accurate
   val valid = new Regex("""[&#!+][&#!+]*[a-zA-Z0-9]+""")
@@ -52,7 +52,8 @@ class ChannelManager(server: ServerContext)
   import NickManager._
   import Response._
 
-  val channels = Map.empty[String, ActorRef]
+  var channels = Map.empty[String, ActorRef]
+  val channelCounter = Kamon.metrics.minMaxCounter("channels")
 
   // TODO: import persisted/saved channels
 
@@ -73,9 +74,10 @@ class ChannelManager(server: ServerContext)
 
         if (isValidChannel(channelName)) {
           val newChannel = context.actorOf(
-            Props(ChannelActor(channelName, self, server)))
+            ChannelActor.props(channelName, self, server))
 
           channels += (channelName -> newChannel)
+          channelCounter.increment()
           newChannel ! UserJoin(nick, creator = true, key, client)
         } else {
           client.client ! Err(ErrorBadChannelMask(channel), client)
@@ -83,10 +85,9 @@ class ChannelManager(server: ServerContext)
     }
   }
 
-  def partAll(nick: String, reason: String, client: Client) = {
-    channels.values.foreach { c =>
-      c ! UserPart(nick, reason, client)
-    }
+  private def partAll(nick: String, reason: String, client: Client) = {
+    val msg = UserPart(nick, reason, client)
+    channels.values.foreach { channel => channel ! msg }
   }
 
   private def withChannel(channel: String, client: Client)(handler: ActorRef => Unit) {
@@ -98,6 +99,9 @@ class ChannelManager(server: ServerContext)
     }
   }
 
+  private def forwardToChannel(channel: String, client: Client, msg: Any) =
+    withChannel(channel, client) { c => c forward msg }
+
   def receive: Receive = {
 
     case ChannelJoin(channel, nick, key, client) =>
@@ -107,9 +111,8 @@ class ChannelManager(server: ServerContext)
         join(channel, nick, key, client)
 
     case ChannelQuit(nick, reason, client) =>
-      channels.values.foreach { c =>
-        c ! UserQuit(nick, reason, client)
-      }
+      val msg = UserQuit(nick, reason, client)
+      channels.values.foreach { channel => channel ! msg }
 
     case ChannelPart(channel, nick, reason, client) =>
       withChannel(channel, client) { c => c ! UserPart(nick, reason, client) }
@@ -121,11 +124,11 @@ class ChannelManager(server: ServerContext)
       val userSender = sender
 
       if (channels.nonEmpty) {
-        var gather = context.actorOf(Props(
-          ChannelGatherer(channels.values, client, UserInChannel(nick), {
+        context.actorOf(
+          ChannelGatherer.props(channels.values, client, UserInChannel(nick), {
             (cs: List[String], cl: Client) =>
               userSender ! UserInChannels(cs, client)
-            })))
+            }))
       } else {
         // no active channels -> no need to gather anything at all
         userSender ! UserInChannels(List(), client)
@@ -133,31 +136,29 @@ class ChannelManager(server: ServerContext)
 
     case ChannelTopics(client: Client) =>
       if (channels.nonEmpty) {
-        val gather = context.actorOf(Props(
-          ChannelGatherer(channels.values, client, ChannelTopic, {
+        context.actorOf(
+          ChannelGatherer.props(channels.values, client, ChannelTopic, {
             (cs: List[ReplyList], cl: Client) =>
               cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList), client)
-            })))
+            }))
       } else {
         client.client ! Msg(ReplyEndOfList, client)
       }
 
     case msg@SetTopic(channel, _, client) =>
-      withChannel(channel, client) { c => c forward msg }
+      forwardToChannel(channel, client, msg)
 
     case msg@GetChannelModes(channel, client) =>
-      withChannel(channel, client) { c => c forward msg }
+      forwardToChannel(channel, client, msg)
 
     case msg@SetChannelModes(channel, _, client) =>
-      withChannel(channel, client) { c => c forward msg }
+      forwardToChannel(channel, client, msg)
 
     case msg@WhoQuery(channel, _, client) =>
-      withChannel(channel, client) { c => c forward msg }
+      forwardToChannel(channel, client, msg)
 
     case msg@ChangeNick(_, _, _) =>
-      channels.values.foreach { c =>
-        c forward msg
-      }
+      channels.values.foreach { channel => channel forward msg }
 
     case msg@PrivMsg(rec, _, _, _) =>
       getChannel(rec) match {

@@ -17,6 +17,7 @@ package com.kongo2002.scirc.handlers
 
 import com.kongo2002.scirc._
 import com.kongo2002.scirc.Response._
+import kamon.Kamon
 
 trait UserHandler extends BaseHandler {
   this: ClientActor =>
@@ -40,6 +41,9 @@ trait UserHandler extends BaseHandler {
       if (!ctx.isRegistered && ctx.nick != "" && ctx.user != "") {
         ctx.isRegistered = true
         sendMsg(welcome, sendTo(client))
+
+        // register metrics
+        metrics = Some(Kamon.metrics.entity(ClientMetrics, ctx.nick))
       }
   }
 }

@@ -21,7 +21,7 @@ package com.kongo2002.scirc
  * @param modes server modes
  */
 case class ServerContext(host: String, modes: Int) {
-  val created = java.util.Calendar.getInstance().getTime()
+  val created = java.util.Calendar.getInstance().getTime
 }
 
 /**

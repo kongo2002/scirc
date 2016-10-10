@@ -15,12 +15,12 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef, ActorLogging}
+import akka.actor.{Actor, ActorLogging, ActorRef}
 
 import scala.collection.mutable.Map
 import scala.util.matching.Regex
-
 import Response._
+import kamon.Kamon
 
 object NickManager {
   // TODO: this regex is not 100% accurate
@@ -51,7 +51,8 @@ object NickManager {
 }
 
 class NickManager extends Actor with ActorLogging with SendActor {
-  var nicks = Map.empty[String, ActorRef]
+  val nicks = Map.empty[String, ActorRef]
+  val nicksCounter = Kamon.metrics.minMaxCounter("nicks")
 
   import NickManager._
 
@@ -80,7 +81,8 @@ class NickManager extends Actor with ActorLogging with SendActor {
           else if (sender == ref) {
             // validate nickname
             if (isValidNick(to)) {
-              nicks -= from += (to -> sender)
+              removeNick(from)
+              addNick(to, sender)
               sender ! NickAck(to, client)
 
               log.info(s"changed nick from '$from' to '$to'")
@@ -104,7 +106,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
       else {
         // validate nickname
         if (isValidNick(nick)) {
-          nicks += (nick -> sender)
+          addNick(nick, sender)
           sender ! NickAck(nick, client)
 
           log.info(s"registered nick '$nick'")
@@ -128,9 +130,19 @@ class NickManager extends Actor with ActorLogging with SendActor {
       ns.foreach (n => whois(n, client))
 
     case DisconnectNick(nick) =>
-      nicks -= nick
+      removeNick(nick)
 
     case NickCount(client) =>
       sender ! Nicks(nicks.size, client)
+  }
+
+  private def addNick(nick: String, ref: ActorRef): Unit = {
+    nicks += nick -> ref
+    nicksCounter.increment()
+  }
+
+  private def removeNick(nick: String): Unit = {
+    nicks -= nick
+    nicksCounter.decrement()
   }
 }

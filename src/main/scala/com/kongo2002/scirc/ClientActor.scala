@@ -78,6 +78,8 @@ class ClientActor(val server: ServerContext,
   val remoteHost = remote.getHostString
   implicit val ctx = ClientContext(server, remoteHost, "")
 
+  protected var metrics: Option[ClientMetrics] = None
+
   def welcome = {
     // TODO: version
     val version = "scirc-0.1"
@@ -85,7 +87,8 @@ class ClientActor(val server: ServerContext,
     val nick = ctx.nick
     val df = java.text.DateFormat.getDateInstance
     val tz = java.util.TimeZone.getTimeZone("UTC")
-    val time = df.format(server.created, tz)
+    df.setTimeZone(tz)
+    val time = df.format(server.created)
 
     ListResponse(List(
       ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),

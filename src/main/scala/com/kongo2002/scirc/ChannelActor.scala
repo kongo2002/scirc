@@ -15,14 +15,13 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorRef, ActorLogging}
+import akka.actor.Props
+import akka.actor.{Actor, ActorLogging, ActorRef}
 import akka.util.ByteString
 
-import scala.collection.mutable.Map
-
 object ChannelActor {
-  def apply(name: String, channelManager: ActorRef, server: ServerContext) =
-    new ChannelActor(name, channelManager, server)
+  def props(name: String, channelManager: ActorRef, server: ServerContext): Props =
+    Props(new ChannelActor(name, channelManager, server))
 
   // request messages
   case class UserJoin(nick: String, creator: Boolean, key: String, client: Client)
@@ -57,14 +56,14 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   import Response._
 
   var topic = ""
+  var members = Map.empty[String, Client]
 
-  val members = Map.empty[String, Client]
   val modes = new Modes.ChannelModeSet
 
   // TODO: a persisted channel might be created earlier
   val created = java.util.Calendar.getInstance().getTime
 
-  def join(nick: String, client: Client) = {
+  def join(nick: String, client: Client): Boolean = {
     if (!members.contains(nick)) {
       members += (nick -> client)
       true
@@ -73,23 +72,24 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     }
   }
 
-  def part(nick: String) = {
-    if (members.contains(nick)) {
-      members -= nick
-      true
-    } else {
-      false
+  def part(nick: String): Boolean =
+    kick(nick).isDefined
+
+  def kick(nick: String): Option[Client] =
+    members.get(nick) match {
+      case Some(n) =>
+        members -= nick
+        Some(n)
+      case None => None
     }
-  }
 
-  def kick(nick: String) = members.remove(nick)
-
-  def toAll(msg: String) {
+  def toAll(msg: String): Unit = {
     val bytes = ByteString(msg)
     members.values.foreach (send(bytes))
   }
 
-  def partOf(nick: String) = members.get(nick).isDefined
+  def partOf(nick: String): Boolean =
+    members.contains(nick)
 
   def checkKey(key: String) = {
     modes.getArgs(ChannelKeyMode) match {
