@@ -57,7 +57,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   var topic = ""
   var members = Map.empty[String, Client]
 
-  val modes = new Modes.ChannelModeSet
+  var modes = Modes.ChannelModeSet()
 
   // TODO: a persisted channel might be created earlier
   val created = java.util.Calendar.getInstance().getTime
@@ -160,7 +160,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       else if (join(nick, client)) {
         // if this is a freshly created channel set the 'creator' flag
         if (creator) {
-          modes.applyModes(List("+Oo", nick, nick))
+          modes = modes.applyModes(List("+Oo", nick, nick))._1
         }
 
         // notify the client that he successfully joined the channel
@@ -223,10 +223,11 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       }
 
     case GetChannelModes(channel, client) =>
-      client.client ! ChannelModes(channel, modes.modeString, client)
+      client.client ! ChannelModes(channel, modes.values.modeString, client)
 
     case SetChannelModes(channel, args, client) =>
-      val applied = modes.applyModes(args)
+      val (newModes, applied) = modes.applyModes(args)
+      modes = newModes
       applied foreach (handleModeResult(_, client))
 
     case ChangeNick(oldNick, newNick, client) =>

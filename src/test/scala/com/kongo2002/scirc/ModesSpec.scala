@@ -21,20 +21,14 @@ class ModesSpec extends FlatSpec with Matchers {
   import Modes._
   import ModeOperationType._
 
-  def user(x: String*) = new ModeParser(new UserModeSet, x).parse
-  def channel(x: String*) = new ModeParser(new ChannelModeSet, x).parse
+  def user(x: String*) = new ModeParser(UserModeSet(), x).parse
+  def channel(x: String*) = new ModeParser(ChannelModeSet(), x).parse
 
-  def userSet(x: String*) = {
-    val set = new UserModeSet
-    set.applyModes(x)
-    set
-  }
+  def userSet(x: String*) =
+    UserModeSet().applyModes(x)._1
 
-  def channelSet(x: String*) = {
-    val set = new ChannelModeSet
-    set.applyModes(x)
-    set
-  }
+  def channelSet(x: String*) =
+    ChannelModeSet().applyModes(x)._1
 
   "ModeParser" should "parse no arguments" in {
     user() should be (List())
@@ -120,28 +114,28 @@ class ModesSpec extends FlatSpec with Matchers {
 
   it should "get ban list arguments" in {
     val set = channelSet("+b", "foo")
-    set.applyModes(List("b", "bar"))
+      .applyModes(List("b", "bar"))._1
 
-    set.getArgs(BanMaskMode) should be (List("bar", "foo"))
+    set.getArgs(BanMaskMode).sorted should be (List("bar", "foo"))
   }
 
   it should "remove ban list arguments" in {
-    val set = channelSet("+b", "foo")
-    set.applyModes(List("b", "bar"))
+    val set0 = channelSet("+b", "foo")
+      .applyModes(List("b", "bar"))._1
 
-    set.getArgs(BanMaskMode) should be (List("bar", "foo"))
+    set0.getArgs(BanMaskMode).sorted should be (List("bar", "foo"))
 
-    set.applyModes(List("-b", "foo"))
+    val set = set0.applyModes(List("-b", "foo"))._1
 
     set.getArgs(BanMaskMode) should be (List("bar"))
   }
 
   it should "remove channel key #1" in {
-    val set = channelSet("+k", "secret")
+    val set0 = channelSet("+k", "secret")
 
-    set.getArgs(ChannelKeyMode) should be (List("secret"))
+    set0.getArgs(ChannelKeyMode) should be (List("secret"))
 
-    set.applyModes(List("-k"))
+    val set = set0.applyModes(List("-k"))._1
 
     set.isSet(ChannelKeyMode) should be (false)
     set.getArgs(ChannelKeyMode) should be (Nil)
@@ -150,11 +144,11 @@ class ModesSpec extends FlatSpec with Matchers {
   }
 
   it should "remove channel key #2" in {
-    val set = channelSet("+k", "secret")
+    val set0 = channelSet("+k", "secret")
 
-    set.getArgs(ChannelKeyMode) should be (List("secret"))
+    set0.getArgs(ChannelKeyMode) should be (List("secret"))
 
-    set.applyModes(List("-k", "secret"))
+    val set = set0.applyModes(List("-k", "secret"))._1
 
     set.isSet(ChannelKeyMode) should be (false)
     set.getArgs(ChannelKeyMode) should be (Nil)
@@ -188,11 +182,11 @@ class ModesSpec extends FlatSpec with Matchers {
   }
 
   it should "replace single argument modes" in {
-    val set = channelSet("+l", "100")
+    val set0 = channelSet("+l", "100")
 
-    set.modeString should be ("+l 100")
+    set0.modeString should be ("+l 100")
 
-    set.applyModes(List("+l", "200"))
+    val set = set0.applyModes(List("+l", "200"))._1
 
     set.modeString should be ("+l 200")
     set.getArgs(UserLimitMode) should be (List("200"))

@@ -28,7 +28,9 @@ trait ModeHandler extends BaseHandler {
       // set modes if given
       if (op.args.length > 1) {
         val modes = op.args.drop(1)
-        val applied = ctx.modes.applyModes(modes)
+        val (newModes, applied) = ctx.modes.applyModes(modes)
+        ctx = ctx.withModes(newModes)
+
         if (applied.nonEmpty)
           log.debug(s"${ctx.nick}: new MODE set '${ctx.modes.modeString}'")
       }
@@ -37,7 +39,7 @@ trait ModeHandler extends BaseHandler {
       // I understand to send a numeric reply
       // but the practice of other servers appears to be different...
       Right(ListResponse(List(
-        ReplyUserModeIs(ctx.modes, ctx),
+        ReplyUserModeIs(ctx.modes.values, ctx),
         HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}", ctx)), ctx))
     }
     else

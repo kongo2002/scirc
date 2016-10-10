@@ -46,7 +46,7 @@ trait OperHandler extends BaseHandler {
     val password = op.get(1)
 
     // check if the current user is an operator already
-    if (ctx.modes.isSet(Modes.OperatorMode))
+    if (ctx.modes.values.isSet(Modes.OperatorMode))
       Right(ReplyYouAreOperator(ctx))
     // check user + password
     else if (validAuth(name, password)) {

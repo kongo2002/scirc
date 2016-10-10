@@ -15,8 +15,7 @@
 
 package com.kongo2002.scirc
 
-import scala.annotation.tailrec
-import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
+import scala.collection.mutable.ArrayBuffer
 
 object Modes {
 
@@ -124,21 +123,21 @@ object Modes {
     } else ""
   }
 
-  abstract class ModeSet extends HashMap[IrcMode, HashSet[String]] {
-    val modes: Map[Char, IrcMode]
+  type ModeSetEntries = Map[IrcMode, Set[String]]
 
-    private def aggregateOps[A, B](seq: Seq[A])(func: A => Option[B]): List[B] = {
-      // we have to invoke 'func' for *every* item
-      seq.foldLeft(List[B]()) { (acc, x) =>
-        func(x) match {
-          case Some(value) => value +: acc
-          case None => acc
-        }
-      }
+  case class ModeSet(values: ModeSetEntries = Map.empty) {
+    private def update(mode: IrcMode, args: Set[String]): (ModeSet, Boolean) =
+      copy(values + (mode -> args)) -> true
+
+    private def remove(mode: IrcMode): (ModeSet, Boolean) = {
+      if (values.contains(mode))
+        copy(values - mode) -> true
+      else
+        this -> false
     }
 
     def modeString: String = {
-      val (modes, args) = foldLeft(("", List[String]())) { (acc, x) =>
+      val (modes, args) = values.foldLeft(("", List.empty[String])) { (acc, x) =>
         val (ms, as) = acc
         val (key, value) = x
 
@@ -158,100 +157,126 @@ object Modes {
         "+" + modes
     }
 
-    def singleSet(value: String) = new HashSet[String] += value
-
-    def setMode(mode: IrcMode, arg: String): Boolean = {
-      if (arg != "") {
-        get(mode) match {
+    def setMode(mode: IrcMode, arg: String): (ModeSet, Boolean) = {
+      if (arg.nonEmpty) {
+        values.get(mode) match {
           case Some(v) =>
             // at this point we have to make sure that 1-argument modes
             // only store up to one argument at a time
             if (mode.arg == OneArg)
-              update(mode, singleSet(arg))
+              update(mode, Set(arg))
             else
-              update(mode, v += arg)
+              update(mode, v + arg)
           case None =>
-            update(mode, singleSet(arg))
+            update(mode, Set(arg))
         }
       } else
-        update(mode, new HashSet[String])
-
-      true
+        update(mode, Set.empty[String])
     }
 
-    def unsetMode(mode: IrcMode, arg: String): Boolean = {
-      if (arg != "") {
-        get(mode) match {
+    def unsetMode(mode: IrcMode, arg: String): (ModeSet, Boolean) = {
+      if (arg.nonEmpty) {
+        values.get(mode) match {
           case Some(v) =>
-            val newArgs = v -= arg
+            val newArgs = v - arg
 
             // remove mode completely if the arguments are now empty
             if (newArgs.isEmpty)
               remove(mode)
             else
               update(mode, newArgs)
-
-            true
-          case None => false
+          case None =>
+            this -> false
         }
       } else {
-        remove(mode).isDefined
+        remove(mode)
       }
     }
 
-    def isSet(chr: Char): Boolean = exists { case (k, _) => k.chr == chr }
+    def isSet(chr: Char): Boolean = values.exists { case (k, _) => k.chr == chr }
 
-    def isSet(mode: IrcMode): Boolean = contains(mode)
+    def isSet(mode: IrcMode): Boolean = values.contains(mode)
 
-    def containsArg(mode: IrcMode, arg: String): Boolean = {
-      get(mode) match {
-        case Some(args) => args.contains(arg)
-        case None => false
-      }
-    }
+    def containsArg(mode: IrcMode, arg: String): Boolean =
+      values.get(mode).exists(_.contains(arg))
 
-    def getArgs(mode: IrcMode): List[String] = get(mode) match {
+    def getArgs(mode: IrcMode): List[String] = values.get(mode) match {
       case Some(x) => x.toList
-      case None => List()
+      case None => Nil
     }
 
-    private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)
-      (func: (IrcMode, String) => Boolean): Option[ModeOperation] = {
-      if (func(mode, arg)) {
-        val value = if (arg != "") List(arg) else List()
-        Some(ModeOperation(op, mode, value))
-      }
-      else
-        None
-    }
-
-    def applyModes(arguments: Seq[String]): List[ModeOperation] = {
-      val parser = new ModeParser(this, arguments)
-      parser.parse match {
-        case Nil => List()
-        case xs => aggregateOps(xs) {
-          case (SetMode, mode, arg)  => toOp(SetMode, mode, arg)(setMode)
-          case (UnsetMode, mode, arg) => toOp(UnsetMode, mode, arg)(unsetMode)
-          case (ListMode, mode, _) =>
-            Some(ModeOperation(ListMode, mode, getArgs(mode)))
+    def aggregateOps[A, B](seq: Seq[A])(func: (ModeSet, A) => (ModeSet, Option[B])): (ModeSet, List[B]) = {
+      // we have to invoke 'func' for *every* item
+      seq.foldLeft((this, List.empty[B])) { case ((set0, acc), x) =>
+        func(set0, x) match {
+          case (set, Some(value)) => (set, value +: acc)
+          case (set, None) => (set, acc)
         }
       }
     }
   }
 
-  class UserModeSet extends ModeSet {
-    val modes = userModes
+  trait ModeSetContainer {
+    type ModeType <: ModeSetContainer
+    def modes: Map[Char, IrcMode]
+    def values: ModeSet
+
+    def modeString: String = values.modeString
+    def size: Int = values.values.size
+    def isSet(chr: Char): Boolean = values.isSet(chr)
+    def isSet(mode: IrcMode): Boolean = values.isSet(mode)
+    def getArgs(mode: IrcMode): List[String] = values.getArgs(mode)
+
+    protected def update(updated: ModeSet): ModeType
+
+    private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)
+                    (func: (IrcMode, String) => (ModeSet, Boolean)): (ModeSet, Option[ModeOperation]) = {
+      val (result, modified) = func(mode, arg)
+      if (modified) {
+        val value = if (arg.nonEmpty) List(arg) else Nil
+        (result, Some(ModeOperation(op, mode, value)))
+      }
+      else
+        (result, None)
+    }
+
+    private def applyParser(parser: ModeParser): (ModeSet, List[ModeOperation]) = {
+      parser.parse match {
+        case Nil => (values, Nil)
+        case xs => values.aggregateOps(xs) {
+          case (set, (SetMode, mode, arg)) => toOp(SetMode, mode, arg)(set.setMode)
+          case (set, (UnsetMode, mode, arg)) => toOp(UnsetMode, mode, arg)(set.unsetMode)
+          case (set, (ListMode, mode, _)) =>
+            (set, Some(ModeOperation(ListMode, mode, set.getArgs(mode))))
+        }
+      }
+    }
+
+    def applyModes(arguments: Seq[String]): (ModeType, List[ModeOperation]) = {
+      val parser = new ModeParser(this, arguments)
+      val (updated, operations) = applyParser(parser)
+
+      update(updated) -> operations
+    }
   }
 
-  class ChannelModeSet extends ModeSet {
-    val modes = channelModes
-
-    def isOp(nick: String) = containsArg(ChannelOperatorMode, nick)
-    def isCreator(nick: String) = containsArg(LocalOperatorMode, nick)
-    def isVoice(nick: String) = containsArg(VoiceMode, nick)
+  case class UserModeSet(values: ModeSet = ModeSet()) extends ModeSetContainer {
+    override type ModeType = UserModeSet
+    override def modes = userModes
+    override def update(updated: ModeSet): UserModeSet = copy(updated)
   }
 
-  class ModeParser(modes: ModeSet, arguments: Seq[String]) {
+  case class ChannelModeSet(values: ModeSet = ModeSet()) extends ModeSetContainer {
+    override type ModeType = ChannelModeSet
+    override def modes = channelModes
+    override def update(updated: ModeSet): ChannelModeSet = copy(updated)
+
+    def isOp(nick: String) = values.containsArg(ChannelOperatorMode, nick)
+    def isCreator(nick: String) = values.containsArg(LocalOperatorMode, nick)
+    def isVoice(nick: String) = values.containsArg(VoiceMode, nick)
+  }
+
+  class ModeParser(modes: ModeSetContainer, arguments: Seq[String]) {
     private var set = SetMode
     private var mode: List[Char] = Nil
 
