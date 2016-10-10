@@ -15,8 +15,7 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.Props
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.util.ByteString
 
 object ChannelActor {
@@ -36,7 +35,7 @@ object ChannelActor {
   case class SetTopic(channel: String, topic: String, client: Client)
   case class GetTopic(channel: String, client: Client)
   case class ChannelTopics(client: Client)
-  case object ChannelTopic
+  case class ChannelTopic(client: Client)
 
   // response messages
   case class ChannelJoined(channel: String, topic: String, created: java.util.Date, names: List[String], client: Client)
@@ -83,7 +82,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       case None => None
     }
 
-  def toAll(msg: String): Unit = {
+  def sendToAll(msg: String): Unit = {
     val bytes = ByteString(msg)
     members.values.foreach (send(bytes))
   }
@@ -107,26 +106,26 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         op.mode match {
           case BanMaskMode =>
             op.args foreach { mask =>
-              client.client ! Msg(ReplyBanList(name, mask), client)
+              client.client ! Msg(ReplyBanList(name, mask, client.ctx), client)
             }
-            client.client ! Msg(ReplyEndOfBanList(name), client)
+            client.client ! Msg(ReplyEndOfBanList(name, client.ctx), client)
           case ExceptionMaskMode =>
             op.args foreach { mask =>
-              client.client ! Msg(ReplyExceptList(name, mask), client)
+              client.client ! Msg(ReplyExceptList(name, mask, client.ctx), client)
             }
-            client.client ! Msg(ReplyEndOfExceptList(name), client)
+            client.client ! Msg(ReplyEndOfExceptList(name, client.ctx), client)
           case InvitationMaskMode =>
             op.args foreach { mask =>
-              client.client ! Msg(ReplyInviteList(name, mask), client)
+              client.client ! Msg(ReplyInviteList(name, mask, client.ctx), client)
             }
-            client.client ! Msg(ReplyEndOfInviteList(name), client)
+            client.client ! Msg(ReplyEndOfInviteList(name, client.ctx), client)
         }
 
       // set and unset operations may be handled similarly
       case ModeOperationType.SetMode | ModeOperationType.UnsetMode =>
         val modeStr = toModeString(op)
 
-        toAll(s":${client.ctx.prefix} MODE $name $modeStr\r\n")
+        sendToAll(s":${client.ctx.prefix} MODE $name $modeStr\r\n")
         log.info(s"MODE operation: $modeStr")
     }
   }
@@ -143,11 +142,11 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
   private def asOperator(client: Client)(func: => Unit) {
     // check if the issuer is part of the channel at all
     if (!members.contains(client.ctx.nick)) {
-      client.client ! Err(ErrorNotOnChannel(name), client)
+      client.client ! Err(ErrorNotOnChannel(name, client.ctx), client)
     }
     // after that check the necessary operator privileges
     else if (!modes.isOp(client.ctx.nick)) {
-      client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name), client)
+      client.client ! Err(ErrorChannelOperatorPrivilegeNeeded(name, client.ctx), client)
     } else {
       func
     }
@@ -157,7 +156,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
     case UserJoin(nick, creator, key, client) =>
       if (!checkKey(key))
-        client.client ! Err(ErrorBadChannelKey(name), client)
+        client.client ! Err(ErrorBadChannelKey(name, client.ctx), client)
       else if (join(nick, client)) {
         // if this is a freshly created channel set the 'creator' flag
         if (creator) {
@@ -169,25 +168,25 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         client.client ! ChannelJoined(name, topic, created, names, client)
 
         // notify all members of member join
-        toAll(s":${client.ctx.prefix} JOIN $name\r\n")
+        sendToAll(s":${client.ctx.prefix} JOIN $name\r\n")
       }
 
     case UserPart(nick, reason, client) =>
       if (part(nick)) {
         // 'nick' is not in the channel anymore
         // that's why the message won't be sent with 'toAll'
-        client.client ! Msg(HostReply(s"PART $name :$reason\r\n"), client)
+        client.client ! Msg(HostReply(s"PART $name :$reason\r\n", client.ctx), client)
 
-        toAll(s":${client.ctx.prefix} PART $name :$reason\r\n")
+        sendToAll(s":${client.ctx.prefix} PART $name :$reason\r\n")
       }
       // user is not on the requested channel
       else {
-        client.client ! Err(ErrorNotOnChannel(name), client)
+        client.client ! Err(ErrorNotOnChannel(name, client.ctx), client)
       }
 
     case UserQuit(nick, reason, client) =>
       if (part(nick))
-        toAll(s":${client.ctx.prefix} QUIT :$reason\r\n")
+        sendToAll(s":${client.ctx.prefix} QUIT :$reason\r\n")
 
     case UserKick(nick, reason, client) =>
       asOperator(client) {
@@ -199,11 +198,11 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
             send(ByteString(msg))(user)
 
             // notify rest of the channel
-            toAll(msg)
+            sendToAll(msg)
 
           // user is not on the requested channel
           case None =>
-            client.client ! Err(ErrorUserNotInChannel(nick, name), client)
+            client.client ! Err(ErrorUserNotInChannel(nick, name, client.ctx), client)
         }
       }
 
@@ -220,7 +219,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       // user is not allowed to send on this channel
       else {
         // TODO: or 401?
-        client.client ! Err(ErrorCannotSendToChannel(name), client)
+        client.client ! Err(ErrorCannotSendToChannel(name, client.ctx), client)
       }
 
     case GetChannelModes(channel, client) =>
@@ -244,7 +243,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
           // change nick in members
           members -= oldNick
-          members += (newNick -> c)
+          members += (newNick -> client)
         case None =>
       }
 
@@ -265,12 +264,12 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         sender ! ChannelGatherer.NoResult
 
     case GetTopic(channel, client) =>
-      client.client ! Msg(ReplyTopic(name, topic), client)
+      client.client ! Msg(ReplyTopic(name, topic, client.ctx), client)
 
-    case ChannelTopic =>
+    case ChannelTopic(client: Client) =>
       // TODO: select visible members only
       val visible = members.size
-      sender ! ChannelGatherer.JobResult(ReplyList(name, visible, topic))
+      sender ! ChannelGatherer.JobResult(ReplyList(name, visible, topic, client.ctx))
 
     case SetTopic(channel, topc, client) =>
       // operator privilege needed
@@ -279,7 +278,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         this.topic = topc
 
         // notify channel members
-        toAll(s":${client.ctx.prefix} TOPIC $name :$topc\r\n")
+        sendToAll(s":${client.ctx.prefix} TOPIC $name :$topc\r\n")
       }
 
     case WhoQuery(channel, opOnly, client) =>
@@ -292,10 +291,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
           "H" // TODO: modes
         )
 
-        client.client ! Msg(ReplyWho(channel, info), client)
+        client.client ! Msg(ReplyWho(channel, info, client.ctx), client)
       }
 
       // send end of list
-      client.client ! Msg(ReplyEndOfWho(channel), client)
+      client.client ! Msg(ReplyEndOfWho(channel, client.ctx), client)
   }
 }

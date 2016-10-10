@@ -24,7 +24,6 @@ import Response._
 
 trait CommandHandler {
   def handleCommand(cmd: String): Response
-  implicit val ctx: ClientContext
 }
 
 trait CommandProcessor extends Actor with ActorLogging {

@@ -22,10 +22,10 @@ trait BaseHandler {
   this: ClientActor =>
 
   /** successful empty response */
-  val empty = Right(EmptyResponse)
+  val empty = Right(EmptyResponse(ctx))
 
   /** generate a successful string response */
-  def success(response: String) = Right(StringResponse(response))
+  def success(response: String) = Right(StringResponse(response, ctx))
 
   /** no-operation handler with an empty response (@see [[empty]]) */
   def noop(op: Operation, client: Client): Response = empty

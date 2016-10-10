@@ -51,19 +51,21 @@ trait NickHandler extends BaseHandler {
       val isNew = oldNick == ""
 
       // update to new nick
-      ctx.nick = newNick
+      ctx = ctx.withNick(newNick)
+
+      val newClient = client.withContext(ctx)
 
       // if this is a new nick this is probably the registration phase
       // but it could be a second try caused by a duplicate nick name
       if (isNew)
-        self ! Registered(client)
+        self ! Registered(newClient)
       else {
         // notify client itself
         val msg = s":$oldNick!${ctx.user}@${ctx.host} NICK $newNick"
-        sendMsg(StringResponse(msg), sendTo(client))
+        sendMsg(StringResponse(msg, ctx), sendTo(newClient))
 
         // notify channels
-        channelManager ! ChangeNick(oldNick, newNick, client)
+        channelManager ! ChangeNick(oldNick, newNick, newClient)
       }
 
     case NickErr(err, client) =>

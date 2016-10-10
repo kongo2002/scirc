@@ -37,11 +37,11 @@ trait ModeHandler extends BaseHandler {
       // I understand to send a numeric reply
       // but the practice of other servers appears to be different...
       Right(ListResponse(List(
-        ReplyUserModeIs(ctx.modes),
-        HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}"))))
+        ReplyUserModeIs(ctx.modes, ctx),
+        HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}", ctx)), ctx))
     }
     else
-      Left(ErrorUsersDontMatch)
+      Left(ErrorUsersDontMatch(ctx))
   }
 
   private def channelMode(channel: String, op: Operation, client: Client): Response = {
@@ -67,6 +67,6 @@ trait ModeHandler extends BaseHandler {
 
   def modeReceive: Receive = {
     case ChannelModes(channel, modes, client) =>
-      sendMsg(ReplyChannelModeIs(channel, modes), sendTo(client))
+      sendMsg(ReplyChannelModeIs(channel, modes, ctx), sendTo(client))
   }
 }

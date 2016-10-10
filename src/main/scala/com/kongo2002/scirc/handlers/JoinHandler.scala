@@ -39,17 +39,17 @@ trait JoinHandler extends BaseHandler {
   def joinReceive: Receive = {
     case ChannelJoined(ch, topic, created, names, client) =>
       topic match {
-        case "" => sendMsg(ReplyNoTopic(ch), sendTo(client))
-        case _ => sendMsg(ReplyTopic(ch, topic), sendTo(client))
+        case "" => sendMsg(ReplyNoTopic(ch, ctx), sendTo(client))
+        case _ => sendMsg(ReplyTopic(ch, topic, ctx), sendTo(client))
       }
 
       // send list of names
       // TODO: split into multiple messages if necessary
       val nameStr = names.mkString(" ")
-      sendMsg(ReplyChannelNames(ch, nameStr), sendTo(client))
-      sendMsg(ReplyEndOfNames(ch), sendTo(client))
+      sendMsg(ReplyChannelNames(ch, nameStr, ctx), sendTo(client))
+      sendMsg(ReplyEndOfNames(ch, ctx), sendTo(client))
 
       // send channel creation date
-      sendMsg(ReplyChannelCreation(ch, created), sendTo(client))
+      sendMsg(ReplyChannelCreation(ch, created, ctx), sendTo(client))
   }
 }

@@ -96,7 +96,7 @@ object Commands {
       }
   }
 
-  def parseCommand(input: String): Either[ErrorResponse, Operation] = {
+  def parseCommand(input: String, ctx: ClientContext): Either[ErrorResponse, Operation] = {
     Utils.splitFirst(input, " ") match {
       case cmd :: rest =>
         cmds.get(cmd) match {
@@ -105,12 +105,12 @@ object Commands {
             if (c.validate(arguments))
               Right(Operation(c, arguments))
             else
-              Left(ErrorNeedMoreParams(cmd))
+              Left(ErrorNeedMoreParams(cmd, ctx))
           case None =>
-            Left(StringError("unknown command"))
+            Left(StringError("unknown command", ctx))
         }
       case _ =>
-        Left(StringError("invalid command given"))
+        Left(StringError("invalid command given", ctx))
     }
   }
 }

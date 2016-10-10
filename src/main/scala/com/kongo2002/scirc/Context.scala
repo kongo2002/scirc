@@ -30,13 +30,12 @@ case class ServerContext(host: String, modes: Int) {
  * @param host client's host name
  * @param nick client's nick name
  */
-case class ClientContext(ctx: ServerContext, host: String, var nick: String) {
-  var user = ""
-  var realname = ""
-  var isRegistered = false
-  var hops = 0
-
+case class ClientContext(ctx: ServerContext, host: String, nick: String, user: String = "", realname: String = "", isRegistered: Boolean = false, hops: Int = 0) {
   val modes = new Modes.UserModeSet
 
-  def prefix = s"$nick!$user@$host"
+  def prefix: String = s"$nick!$user@$host"
+  def registerable: Boolean = !isRegistered && user.nonEmpty && nick.nonEmpty
+
+  def withNick(nick: String): ClientContext = copy(nick = nick)
+  def register: ClientContext = copy(isRegistered = true)
 }

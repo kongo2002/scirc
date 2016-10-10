@@ -42,7 +42,7 @@ trait QuitHandler extends BaseHandler {
     val msg = op.get(0, "leaving")
 
     // we are supposed to acknowledge with an ERROR message
-    sendMsg(StringError(s"QUIT ($msg)"), sendTo(client))
+    sendMsg(StringError(s"QUIT ($msg)", ctx), sendTo(client))
 
     disconnect(client, msg, isClosed = false)
     empty

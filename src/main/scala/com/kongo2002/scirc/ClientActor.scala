@@ -30,7 +30,9 @@ import scala.collection.JavaConverters._
  * @param socket underlying socket actor
  * @param ctx client's context information
  */
-case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext)
+case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext) {
+  def withContext(ctx: ClientContext): Client = copy(ctx = ctx)
+}
 
 /**
  * Client actor's companion object
@@ -76,8 +78,8 @@ class ClientActor(val server: ServerContext,
   import Response._
 
   val remoteHost = remote.getHostString
-  implicit val ctx = ClientContext(server, remoteHost, "")
 
+  var ctx = ClientContext(server, remoteHost, "")
   protected var metrics: Option[ClientMetrics] = None
 
   def welcome = {
@@ -91,14 +93,14 @@ class ClientActor(val server: ServerContext,
     val time = df.format(server.created)
 
     ListResponse(List(
-      ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host"),
-      ReplyYourHost(s"Your host is $host, running version $version"),
-      ReplyCreated(s"This server was created $time"),
+      ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host", ctx),
+      ReplyYourHost(s"Your host is $host, running version $version", ctx),
+      ReplyCreated(s"This server was created $time", ctx),
       // TODO: ISUPPORT: <http://www.irc.org/tech_docs/005.html>
       // TODO: LUSERS
-      ReplyMyInfo(s"$host $version o o"),
+      ReplyMyInfo(s"$host $version o o", ctx),
       getMotd
-      ))
+      ), ctx)
   }
 
   protected def getConfig[T](getter: (Config, String) => T)(path: String): T = {
@@ -142,7 +144,7 @@ class ClientActor(val server: ServerContext,
   }
 
   def handleCommand(cmd: String): Response = {
-    parseCommand(cmd).right.flatMap(handle)
+    parseCommand(cmd, ctx).right.flatMap(handle)
   }
 
   def handleClose: Receive = {

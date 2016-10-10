@@ -106,13 +106,12 @@ object Modes {
     InvitationMaskMode
   ))
 
-  private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] = {
+  private def toMap(modes: Seq[IrcMode]): Map[Char, IrcMode] =
     modes.foldLeft(Map.empty[Char, IrcMode]) { (map, x) =>
       map + ((x.chr, x))
     }
-  }
 
-  def toModeString(op: ModeOperation) = {
+  def toModeString(op: ModeOperation): String = {
     def sign = if (op.t == UnsetMode) '-' else '+'
 
     if (!op.mode.internal) {

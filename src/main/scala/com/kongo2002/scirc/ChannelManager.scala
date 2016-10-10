@@ -80,7 +80,7 @@ class ChannelManager(server: ServerContext)
           channelCounter.increment()
           newChannel ! UserJoin(nick, creator = true, key, client)
         } else {
-          client.client ! Err(ErrorBadChannelMask(channel), client)
+          client.client ! Err(ErrorBadChannelMask(channel, client.ctx), client)
         }
     }
   }
@@ -95,7 +95,7 @@ class ChannelManager(server: ServerContext)
       case Some(c) =>
         handler(c)
       case None =>
-        client.client ! Err(ErrorNoSuchChannel(channel), client)
+        client.client ! Err(ErrorNoSuchChannel(channel, client.ctx), client)
     }
   }
 
@@ -139,10 +139,10 @@ class ChannelManager(server: ServerContext)
         context.actorOf(
           ChannelGatherer.props(channels.values, client, ChannelTopic, {
             (cs: List[ReplyList], cl: Client) =>
-              cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList), client)
+              cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
             }))
       } else {
-        client.client ! Msg(ReplyEndOfList, client)
+        client.client ! Msg(ReplyEndOfList(client.ctx), client)
       }
 
     case msg@SetTopic(channel, _, client) =>

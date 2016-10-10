@@ -17,7 +17,6 @@ package com.kongo2002.scirc
 
 import akka.actor.{Actor, ActorLogging, ActorRef}
 
-import scala.collection.mutable.Map
 import scala.util.matching.Regex
 import Response._
 import kamon.Kamon
@@ -51,7 +50,7 @@ object NickManager {
 }
 
 class NickManager extends Actor with ActorLogging with SendActor {
-  val nicks = Map.empty[String, ActorRef]
+  var nicks = Map.empty[String, ActorRef]
   val nicksCounter = Kamon.metrics.minMaxCounter("nicks")
 
   import NickManager._
@@ -63,7 +62,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
         ref ! WhoIs(client)
       case None =>
         // specified nick does not exist
-        sender ! Err(ErrorNoSuchNick(nick), client)
+        sender ! Err(ErrorNoSuchNick(nick, client.ctx), client)
     }
   }
 
@@ -72,11 +71,11 @@ class NickManager extends Actor with ActorLogging with SendActor {
     case ChangeNick(from, to, client) =>
       nicks.get(from) match {
         case Some(ref) =>
-          val exists = nicks.get(to).isDefined
+          val exists = nicks.contains(to)
 
           // nick already exists
           if (exists)
-            sender ! NickErr(ErrorNickAlreadyInUse(to), client)
+            sender ! NickErr(ErrorNickAlreadyInUse(to, client.ctx), client)
           // 'free' nick
           else if (sender == ref) {
             // validate nickname
@@ -87,22 +86,22 @@ class NickManager extends Actor with ActorLogging with SendActor {
 
               log.info(s"changed nick from '$from' to '$to'")
             } else {
-              sender ! NickErr(ErrorErroneousNick(to), client)
+              sender ! NickErr(ErrorErroneousNick(to, client.ctx), client)
             }
           }
           else
             // TODO: use correct numeric reply
-            sender ! NickErr(StringError("invalid user"), client)
+            sender ! NickErr(StringError("invalid user", client.ctx), client)
         case None =>
           // TODO: use correct numeric reply
-          sender ! NickErr(StringError("user does not exist"), client)
+          sender ! NickErr(StringError("user does not exist", client.ctx), client)
       }
 
     case RegisterNick(nick, client) =>
-      val exists = nicks.get(nick).isDefined
+      val exists = nicks.contains(nick)
 
       if (exists)
-        sender ! NickErr(ErrorNickAlreadyInUse(nick), client)
+        sender ! NickErr(ErrorNickAlreadyInUse(nick, client.ctx), client)
       else {
         // validate nickname
         if (isValidNick(nick)) {
@@ -111,7 +110,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
 
           log.info(s"registered nick '$nick'")
         } else {
-          sender ! NickErr(ErrorErroneousNick(nick), client)
+          sender ! NickErr(ErrorErroneousNick(nick, client.ctx), client)
         }
       }
 

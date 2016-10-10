@@ -47,11 +47,11 @@ trait WhoIsHandler extends BaseHandler {
       val nick = ctx.nick
 
       val reply = ListResponse(List(
-        ReplyWhoIsUser(nick, ctx.user, ctx.host, ctx.realname),
-        ReplyWhoIsServer(nick, ctx.ctx.host, ctx.ctx.host),
-        ReplyWhoIsChannels(nick, channels),
-        ReplyEndOfWhoIsList(nick)
-      ))
+        ReplyWhoIsUser(ctx),
+        ReplyWhoIsServer(nick, ctx.ctx.host, ctx.ctx.host, ctx),
+        ReplyWhoIsChannels(nick, channels, ctx),
+        ReplyEndOfWhoIsList(nick, ctx)
+      ), ctx)
 
       sendMsg(reply, sendTo(client))
   }

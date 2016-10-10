@@ -47,17 +47,17 @@ trait OperHandler extends BaseHandler {
 
     // check if the current user is an operator already
     if (ctx.modes.isSet(Modes.OperatorMode))
-      Right(ReplyYouAreOperator)
+      Right(ReplyYouAreOperator(ctx))
     // check user + password
     else if (validAuth(name, password)) {
       ctx.modes.applyModes(List("+o"))
 
       // send an extra MODE message that reflects the change
       Right(ListResponse(List(
-        StringResponse(s"MODE ${ctx.nick} :+o"),
-        ReplyYouAreOperator)))
+        StringResponse(s"MODE ${ctx.nick} :+o", ctx),
+        ReplyYouAreOperator(ctx)), ctx))
     }
     else
-      Left(ErrorPasswordMismatch)
+      Left(ErrorPasswordMismatch(ctx))
   }
 }

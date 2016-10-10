@@ -40,13 +40,13 @@ trait MotdHandler extends BaseHandler {
   def getMotd: Reply = {
     readMotd match {
       case Some(motd) =>
-        val lines = List(ReplyStartMotd(server.host)) ++
-          motd.map(ReplyMotd) :+
-          ReplyEndOfMotd
+        val lines = List(ReplyStartMotd(server.host, ctx)) ++
+          motd.map(ReplyMotd(_, ctx)) :+
+          ReplyEndOfMotd(ctx)
 
-        ListResponse(lines)
+        ListResponse(lines, ctx)
       case None =>
-        ErrorNoMotd
+        ErrorNoMotd(ctx)
     }
   }
 

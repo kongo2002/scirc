@@ -28,9 +28,9 @@ trait PrivMsgHandler extends BaseHandler {
     val text = op.get(1)
 
     if (rec == "")
-      Left(ErrorNoRecipient("PRIVMSG"))
+      Left(ErrorNoRecipient("PRIVMSG", ctx))
     else if (text == "")
-      Left(ErrorNoTextToSend)
+      Left(ErrorNoTextToSend(ctx))
     else {
       channelManager ! PrivMsg(rec, text, ctx.nick, client)
       metrics.foreach(_.privateMessageCounter.increment())
