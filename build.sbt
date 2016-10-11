@@ -34,3 +34,6 @@ javaOptions in run <++= AspectjKeys.weaverOptions in Aspectj
 
 // necessary for proper aspectj startup
 fork in run := true
+
+// no parallel tests
+parallelExecution in Test := false
