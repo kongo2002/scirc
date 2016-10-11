@@ -32,6 +32,7 @@ import scala.collection.JavaConverters._
  */
 case class Client(client: ActorRef, socket: ActorRef, ctx: ClientContext) {
   def withContext(ctx: ClientContext): Client = copy(ctx = ctx)
+  def !(msg: Any)(implicit sender: ActorRef) = client ! msg
 }
 
 /**
@@ -120,27 +121,26 @@ class ClientActor(val server: ServerContext,
 
   def handle(op: Operation): Response = {
     val client = Client(self, sender, ctx)
-    val handler = op.cmd match {
-      case IsonCmd    => handleIson _
-      case JoinCmd    => handleJoin _
-      case KickCmd    => handleKick _
-      case ListCmd    => handleList _
-      case ModeCmd    => handleMode _
-      case MotdCmd    => handleMotd _
-      case NickCmd    => handleNick _
-      case OperCmd    => handleOper _
-      case PartCmd    => handlePart _
-      case PingCmd    => handlePing _
-      case PongCmd    => noop _
-      case PrivMsgCmd => handlePrivMsg _
-      case QuitCmd    => handleQuit _
-      case TopicCmd   => handleTopic _
-      case UserCmd    => handleUser _
-      case WhoCmd     => handleWho _
-      case WhoIsCmd   => handleWhois _
-    }
 
-    handler(op, client)
+    op.cmd match {
+      case IsonCmd    => handleIson(op, client)
+      case JoinCmd    => handleJoin(op, client)
+      case KickCmd    => handleKick(op, client)
+      case ListCmd    => handleList(op, client)
+      case ModeCmd    => handleMode(op, client)
+      case MotdCmd    => handleMotd(op, client)
+      case NickCmd    => handleNick(op, client)
+      case OperCmd    => handleOper(op, client)
+      case PartCmd    => handlePart(op, client)
+      case PingCmd    => handlePing(op, client)
+      case PongCmd    => noop(op, client)
+      case PrivMsgCmd => handlePrivMsg(op, client)
+      case QuitCmd    => handleQuit(op, client)
+      case TopicCmd   => handleTopic(op, client)
+      case UserCmd    => handleUser(op, client)
+      case WhoCmd     => handleWho(op, client)
+      case WhoIsCmd   => handleWhois(op, client)
+    }
   }
 
   def handleCommand(cmd: String): Response = {

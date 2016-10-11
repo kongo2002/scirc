@@ -24,7 +24,7 @@ trait WhoIsHandler extends BaseHandler {
   import ChannelActor._
   import NickManager._
 
-  def args(xs: Array[String]) = xs.toList match {
+  private def args(xs: Array[String]) = xs.toList match {
     case List(target, mask) => (target, mask.split(","))
     case mask :: _ => ("", mask.split(","))
   }

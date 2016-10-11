@@ -18,6 +18,8 @@ package com.kongo2002.scirc.handlers
 import com.kongo2002.scirc._
 import com.kongo2002.scirc.Response._
 
+import scala.util.control.NonFatal
+
 trait MotdHandler extends BaseHandler {
   this: ClientActor =>
 
@@ -33,7 +35,7 @@ trait MotdHandler extends BaseHandler {
       else
         None
     } catch {
-      case _: Throwable => None
+      case NonFatal(_) => None
     }
   }
 

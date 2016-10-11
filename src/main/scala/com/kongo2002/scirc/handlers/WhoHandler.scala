@@ -29,6 +29,7 @@ trait WhoHandler extends BaseHandler {
   }
 
   private def userWho(mask: String, opOnly: Boolean, client: Client) = {
+    // TODO
     empty
   }
 

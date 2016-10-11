@@ -29,8 +29,9 @@ trait UserHandler extends BaseHandler {
 
     // TODO: set default mask
     val modeBitMask = op.getInt(1).getOrElse(0)
+    val newClient = client.withContext(ctx)
 
-    self ! Registered(client)
+    self ! Registered(newClient)
     empty
   }
 

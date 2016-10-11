@@ -21,7 +21,7 @@ object Response {
   case class Err(e: ErrorResponse, client: Client)
 
   // SUCCESS MESSAGE
-  case class Msg(msg: Reply, client: Client)
+  case class Msg(msg: SuccessResponse, client: Client)
 
   // GENERAL RESPONSE
   type Response = Either[ErrorResponse, SuccessResponse]

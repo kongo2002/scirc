@@ -25,11 +25,11 @@ object ChannelManager {
     Props(new ChannelManager(server))
 
   // TODO: this regex is not 100% accurate
-  val valid = new Regex("""[&#!+][&#!+]*[a-zA-Z0-9]+""")
+  val validChannel = new Regex("""[&#!+][&#!+]*[a-zA-Z0-9]+""")
 
   def isValidChannel(channel: String): Boolean = {
     channel match {
-      case valid(_*) => true
+      case validChannel(_*) => true
       case _ => false
     }
   }
@@ -80,7 +80,7 @@ class ChannelManager(server: ServerContext)
           channelCounter.increment()
           newChannel ! UserJoin(nick, creator = true, key, client)
         } else {
-          client.client ! Err(ErrorBadChannelMask(channel, client.ctx), client)
+          client ! Err(ErrorBadChannelMask(channel, client.ctx), client)
         }
     }
   }
@@ -95,7 +95,7 @@ class ChannelManager(server: ServerContext)
       case Some(c) =>
         handler(c)
       case None =>
-        client.client ! Err(ErrorNoSuchChannel(channel, client.ctx), client)
+        client ! Err(ErrorNoSuchChannel(channel, client.ctx), client)
     }
   }
 
@@ -139,10 +139,10 @@ class ChannelManager(server: ServerContext)
         context.actorOf(
           ChannelGatherer.props(channels.values, client, ChannelTopic, {
             (cs: List[ReplyList], cl: Client) =>
-              cl.client ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
+              cl ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
             }))
       } else {
-        client.client ! Msg(ReplyEndOfList(client.ctx), client)
+        client ! Msg(ReplyEndOfList(client.ctx), client)
       }
 
     case msg@SetTopic(channel, _, client) =>
@@ -158,14 +158,9 @@ class ChannelManager(server: ServerContext)
       forwardToChannel(channel, client, msg)
 
     case msg@ChangeNick(_, _, _) =>
-      channels.values.foreach { channel => channel forward msg }
+      channels.values.foreach { _ forward msg }
 
     case msg@PrivMsg(rec, _, _, _) =>
-      getChannel(rec) match {
-        case Some(channel) =>
-          channel forward msg
-        case None =>
-          // do nothing for now
-      }
+      getChannel(rec) foreach { _ forward msg }
   }
 }

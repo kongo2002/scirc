@@ -28,7 +28,7 @@ trait TopicHandler extends BaseHandler {
     val topic = op.get(1)
 
     // set topic
-    if (topic != "")
+    if (topic.nonEmpty)
       channelManager ! SetTopic(channel, topic, client)
     // otherwise get topic
       channelManager ! GetTopic(channel, client)
