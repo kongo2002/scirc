@@ -40,9 +40,6 @@ trait UserHandler extends BaseHandler {
       if (ctx.registerable) {
         ctx = ctx.register
         sendMsg(welcome, sendTo(client.withContext(ctx)))
-
-        // register metrics
-        metrics = Some(Kamon.metrics.entity(ClientMetrics, ctx.nick))
       }
   }
 }

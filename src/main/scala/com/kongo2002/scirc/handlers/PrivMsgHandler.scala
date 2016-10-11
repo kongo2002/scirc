@@ -33,7 +33,7 @@ trait PrivMsgHandler extends BaseHandler {
       Left(ErrorNoTextToSend(ctx))
     else {
       channelManager ! PrivMsg(rec, text, ctx.nick, client)
-      metrics.foreach(_.privateMessageCounter.increment())
+      metrics.privateMessageCounter.increment()
       empty
     }
   }

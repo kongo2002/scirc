@@ -17,10 +17,11 @@ package com.kongo2002.scirc
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Props, ActorRef}
+import akka.actor.{ActorRef, Props}
 import akka.io.Tcp
 import com.kongo2002.scirc.handlers._
 import com.typesafe.config.Config
+import kamon.Kamon
 
 import scala.collection.JavaConverters._
 
@@ -73,7 +74,8 @@ class ClientActor(val server: ServerContext,
   with OperHandler
   with KickHandler
   with MotdHandler
-  with CommandHandler {
+  with CommandHandler
+  with HasClientMetrics {
 
   import Commands._
   import Response._
@@ -81,11 +83,10 @@ class ClientActor(val server: ServerContext,
   val remoteHost = remote.getHostString
 
   var ctx = ClientContext(server, remoteHost, "")
-  protected var metrics: Option[ClientMetrics] = None
+  val metricsName = self.toString
+  val metrics = Kamon.metrics.entity(ClientMetrics, metricsName)
 
   def welcome = {
-    // TODO: version
-    val version = "scirc-0.1"
     val host = server.host
     val nick = ctx.nick
     val df = java.text.DateFormat.getDateInstance
@@ -95,11 +96,11 @@ class ClientActor(val server: ServerContext,
 
     ListResponse(List(
       ReplyWelcome(s"Welcome to the Internet Relay Network $nick!${ctx.user}@$host", ctx),
-      ReplyYourHost(s"Your host is $host, running version $version", ctx),
+      ReplyYourHost(s"Your host is $host, running version ${server.version}", ctx),
       ReplyCreated(s"This server was created $time", ctx),
       // TODO: ISUPPORT: <http://www.irc.org/tech_docs/005.html>
       // TODO: LUSERS
-      ReplyMyInfo(s"$host $version o o", ctx),
+      ReplyMyInfo(s"$host ${server.version} o o", ctx),
       getMotd
       ), ctx)
   }
@@ -172,4 +173,9 @@ class ClientActor(val server: ServerContext,
     whoisReceive orElse
     handleReply  orElse
     handleClose
+
+  override def postStop(): Unit = {
+    ClientMetrics.removeEntity(metricsName)
+    super.postStop()
+  }
 }

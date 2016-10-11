@@ -25,6 +25,8 @@ import com.kongo2002.scirc.Modes.UserModeSet
  */
 case class ServerContext(host: String, modes: Int) {
   val created = java.util.Calendar.getInstance().getTime
+  // TODO: proper version
+  val version = "scirc-0.1"
 }
 
 /**

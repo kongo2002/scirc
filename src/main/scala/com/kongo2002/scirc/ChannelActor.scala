@@ -224,7 +224,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       }
 
     case GetChannelModes(channel, client) =>
-      client ! ChannelModes(channel, modes.values.modeString, client)
+      client ! ChannelModes(channel, modes.modeString, client)
 
     case SetChannelModes(channel, args, client) =>
       val (newModes, applied) = modes.applyModes(args)

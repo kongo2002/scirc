@@ -23,11 +23,11 @@ import kamon.Kamon
 
 object NickManager {
   // TODO: this regex is not 100% accurate
-  val valid = new Regex("""[^&#!+][-_a-zA-Z0-9]+""")
+  val validNick = new Regex("""[^&#!+][-_a-zA-Z0-9]+""")
 
   def isValidNick(nick: String): Boolean = {
     nick match {
-      case valid(_*) => true
+      case validNick(_*) => true
       case _ => false
     }
   }
@@ -55,7 +55,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
 
   import NickManager._
 
-  def whois(nick: String, client: Client) = {
+  private def whois(nick: String, client: Client) = {
     nicks.get(nick) match {
       case Some(ref) =>
         // request WHOIS information of respective client
@@ -108,7 +108,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
           addNick(nick, sender)
           sender ! NickAck(nick, client)
 
-          log.info(s"registered nick '$nick'")
+          log.info(s"registered nick '$nick' to $client")
         } else {
           sender ! NickErr(ErrorErroneousNick(nick, client.ctx), client)
         }

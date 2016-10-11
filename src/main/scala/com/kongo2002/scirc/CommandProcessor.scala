@@ -22,7 +22,7 @@ import akka.util.ByteString
 
 import Response._
 
-trait CommandHandler {
+trait CommandHandler extends HasClientMetrics {
   def handleCommand(cmd: String): Response
 }
 
@@ -72,14 +72,20 @@ trait CommandProcessor extends Actor with ActorLogging {
       sendFunc(msg.getMessage)
   }
 
-  def send(x: String): Unit = {
-    sender ! Tcp.Write(ByteString(x))
-    log.debug(s"<<< $x")
+  def send(msg: String): Unit = {
+    val bs = ByteString(msg)
+    sender ! Tcp.Write(bs)
+
+    metrics.sentBytesCounter.increment(bs.length)
+    log.debug(s"<<< $msg")
   }
 
-  def sendTo(to: Client)(x: String): Unit = {
-    to.socket ! Tcp.Write(ByteString(x))
-    log.debug(s"<<< $x")
+  def sendTo(to: Client)(msg: String): Unit = {
+    val bs = ByteString(msg)
+    to.socket ! Tcp.Write(bs)
+
+    metrics.sentBytesCounter.increment(bs.length)
+    log.debug(s"<<< $msg")
   }
 
   def process(cmd: String): Unit = {

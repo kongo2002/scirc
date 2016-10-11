@@ -124,23 +124,21 @@ class ChannelManager(server: ServerContext)
       val userSender = sender
 
       if (channels.nonEmpty) {
-        context.actorOf(
-          ChannelGatherer.props(channels.values, client, UserInChannel(nick), {
-            (cs: List[String], cl: Client) =>
-              userSender ! UserInChannels(cs, client)
-            }))
+        ChannelGatherer(channels.values, client, UserInChannel(nick), {
+          (cs: List[String], cl: Client) =>
+            userSender ! UserInChannels(cs, client)
+          })
       } else {
         // no active channels -> no need to gather anything at all
-        userSender ! UserInChannels(List(), client)
+        userSender ! UserInChannels(Nil, client)
       }
 
     case ChannelTopics(client: Client) =>
       if (channels.nonEmpty) {
-        context.actorOf(
-          ChannelGatherer.props(channels.values, client, ChannelTopic, {
-            (cs: List[ReplyList], cl: Client) =>
-              cl ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
-            }))
+        ChannelGatherer(channels.values, client, ChannelTopic, {
+          (cs: List[ReplyList], cl: Client) =>
+            cl ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
+          })
       } else {
         client ! Msg(ReplyEndOfList(client.ctx), client)
       }
@@ -157,7 +155,7 @@ class ChannelManager(server: ServerContext)
     case msg@WhoQuery(channel, _, client) =>
       forwardToChannel(channel, client, msg)
 
-    case msg@ChangeNick(_, _, _) =>
+    case msg: ChangeNick =>
       channels.values.foreach { _ forward msg }
 
     case msg@PrivMsg(rec, _, _, _) =>

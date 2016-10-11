@@ -22,6 +22,7 @@ import akka.io.{IO, Tcp}
 import scala.concurrent.duration._
 import java.net.{InetSocketAddress, URI}
 
+import akka.actor.Terminated
 import kamon.Kamon
 
 import scala.concurrent.Await
@@ -34,6 +35,8 @@ class Server(listen: URI, hostname: String) extends Actor with ActorLogging {
   var nickManager = context.system.deadLetters
   var channelManager = context.system.deadLetters
 
+  val clients = Kamon.metrics.minMaxCounter("clients")
+
   IO(Tcp)(context.system) ! Tcp.Bind(self, new InetSocketAddress(host, port))
 
   override def preStart() = {
@@ -45,8 +48,13 @@ class Server(listen: URI, hostname: String) extends Actor with ActorLogging {
     case Tcp.Connected(rem, _) =>
       log.debug(s"accepted new connection from '$rem'")
 
-      sender ! Tcp.Register(context.actorOf(
-        ClientActor.props(ctx, rem, nickManager, channelManager)))
+      sender ! Tcp.Register(context.watch(context.actorOf(
+        ClientActor.props(ctx, rem, nickManager, channelManager))))
+
+      clients.increment()
+
+    case Terminated(_) =>
+      clients.decrement()
   }
 }
 

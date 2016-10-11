@@ -15,6 +15,7 @@
 
 package com.kongo2002.scirc
 
+import akka.actor.ActorContext
 import akka.actor.Props
 import akka.actor.{Actor, ActorLogging, ActorRef}
 
@@ -25,19 +26,21 @@ object ChannelGatherer {
   case class JobResult[T](result: T) extends GathererResult
   case object NoResult extends GathererResult
 
-  def props[T, R](channels: Iterable[ActorRef],
+  def apply[T, R](channels: Iterable[ActorRef],
       client: Client,
       message: T,
       finisher: (List[R], Client) => Unit,
-      timeout: FiniteDuration = 1.seconds): Props =
-    Props(new ChannelGatherer(channels, client, message, finisher, timeout))
+      timeout: FiniteDuration = 1.seconds)(implicit context: ActorContext): ActorRef = {
+    val props = Props(new ChannelGatherer(channels, client, message, finisher, timeout))
+    context.actorOf(props)
+  }
 }
 
 class ChannelGatherer[T, R](channels: Iterable[ActorRef],
     client: Client,
     message: T,
     finisher: (List[R], Client) => Unit,
-    timeout: FiniteDuration = 1.seconds)
+    timeout: FiniteDuration)
   extends Actor with ActorLogging {
   import ChannelGatherer._
 
