@@ -30,8 +30,8 @@ trait TopicHandler extends BaseHandler {
     // set topic
     if (topic.nonEmpty)
       channelManager ! SetTopic(channel, topic, client)
-    // otherwise get topic
-    channelManager ! GetTopic(channel, client)
+    else // otherwise get topic
+      channelManager ! GetTopic(channel, client)
 
     empty
   }
