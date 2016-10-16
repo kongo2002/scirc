@@ -5,11 +5,14 @@ import java.net.InetSocketAddress
 import akka.actor.ActorSystem
 import akka.io.{ IO, Tcp }
 import akka.testkit.{ ImplicitSender, TestKit }
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{ Matchers, WordSpecLike }
 
+import scala.concurrent.duration.DurationInt
+
 class ServerSpec extends TestKit(ActorSystem("ServerSpec"))
-    with ImplicitSender with WordSpecLike with Matchers with Eventually {
+    with ImplicitSender with WordSpecLike with Matchers with Eventually with BeforeAndAfterAll {
 
   "Server" should {
     "handle connections" in {
@@ -24,9 +27,14 @@ class ServerSpec extends TestKit(ActorSystem("ServerSpec"))
       eventually {
         client ! Tcp.Connect(remote)
         expectMsgType[Tcp.Connected]
-      }
+      }(PatienceConfig(3.seconds, 500.millis))
 
       client ! Tcp.Close
     }
+  }
+
+  override def afterAll(): Unit = {
+    TestKit.shutdownActorSystem(system)
+    super.afterAll()
   }
 }

@@ -2,7 +2,7 @@ package com.kongo2002.scirc
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ Props, ActorSystem }
+import akka.actor.{ ActorSystem, Props }
 import akka.io.Tcp
 import akka.testkit.{ ImplicitSender, TestKit }
 import akka.util.ByteString
