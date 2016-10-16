@@ -3,12 +3,13 @@ package com.kongo2002.scirc
 import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
-import akka.io.{ Tcp, IO }
-import akka.testkit.{ TestKit, ImplicitSender }
-import org.scalatest.{ WordSpecLike, Matchers }
+import akka.io.{ IO, Tcp }
+import akka.testkit.{ ImplicitSender, TestKit }
+import org.scalatest.concurrent.Eventually
+import org.scalatest.{ Matchers, WordSpecLike }
 
 class ServerSpec extends TestKit(ActorSystem("ServerSpec"))
-    with ImplicitSender with WordSpecLike with Matchers {
+    with ImplicitSender with WordSpecLike with Matchers with Eventually {
 
   "Server" should {
     "handle connections" in {
@@ -19,9 +20,11 @@ class ServerSpec extends TestKit(ActorSystem("ServerSpec"))
       system.actorOf(Server.props(host, port))
       val client = IO(Tcp)(system)
 
-      client ! Tcp.Connect(remote)
-
-      expectMsgType[Tcp.Connected]
+      // server appears to take a few moments until accepting connections
+      eventually {
+        client ! Tcp.Connect(remote)
+        expectMsgType[Tcp.Connected]
+      }
 
       client ! Tcp.Close
     }
