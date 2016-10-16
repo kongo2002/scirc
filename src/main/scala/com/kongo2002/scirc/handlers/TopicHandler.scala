@@ -31,7 +31,7 @@ trait TopicHandler extends BaseHandler {
     if (topic.nonEmpty)
       channelManager ! SetTopic(channel, topic, client)
     // otherwise get topic
-      channelManager ! GetTopic(channel, client)
+    channelManager ! GetTopic(channel, client)
 
     empty
   }

@@ -15,7 +15,7 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.util.ByteString
 import com.kongo2002.scirc.errors.UnexpectedException
 
@@ -45,9 +45,9 @@ object ChannelActor {
 }
 
 class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext)
-  extends Actor
-  with ActorLogging
-  with SendActor {
+    extends Actor
+    with ActorLogging
+    with SendActor {
 
   import ChannelActor._
   import ClientActor._
@@ -83,7 +83,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
 
   def sendToAll(msg: String): Unit = {
     val bytes = ByteString(msg)
-    members.values.foreach (send(bytes))
+    members.values.foreach(send(bytes))
   }
 
   def partOf(nick: String): Boolean =
@@ -144,8 +144,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
     // check if the issuer is part of the channel at all
     if (!members.contains(client.ctx.nick)) {
       client ! Err(ErrorNotOnChannel(name, client.ctx), client)
-    }
-    // after that check the necessary operator privileges
+    } // after that check the necessary operator privileges
     else if (!modes.isOp(client.ctx.nick)) {
       client ! Err(ErrorChannelOperatorPrivilegeNeeded(name, client.ctx), client)
     } else {
@@ -179,8 +178,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         client ! Msg(HostReply(s"PART $name :$reason\r\n", client.ctx), client)
 
         sendToAll(s":${client.ctx.prefix} PART $name :$reason\r\n")
-      }
-      // user is not on the requested channel
+      } // user is not on the requested channel
       else {
         client ! Err(ErrorNotOnChannel(name, client.ctx), client)
       }
@@ -212,12 +210,12 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       if (partOf(from)) {
         val msg = ByteString(s":$from PRIVMSG $name :$text\r\n")
 
-        members.foreach { case (nick, cl) =>
-          if (nick != client.ctx.nick)
-            send(msg)(cl)
+        members.foreach {
+          case (nick, cl) =>
+            if (nick != client.ctx.nick)
+              send(msg)(cl)
         }
-      }
-      // user is not allowed to send on this channel
+      } // user is not allowed to send on this channel
       else {
         // TODO: or 401?
         client ! Err(ErrorCannotSendToChannel(name, client.ctx), client)
@@ -237,9 +235,10 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
         val msg = ByteString(s":$from NICK $newNick\r\n")
 
         // send notification to participating channels first
-        members.foreach { case (nick, cl) =>
-          if (nick != oldNick)
-            send(msg)(cl)
+        members.foreach {
+          case (nick, cl) =>
+            if (nick != oldNick)
+              send(msg)(cl)
         }
 
         // change nick in members
@@ -259,8 +258,7 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
             name
 
         sender ! ChannelGatherer.JobResult(chName)
-      }
-      else
+      } else
         sender ! ChannelGatherer.NoResult
 
     case GetTopic(channel, client) =>
@@ -285,7 +283,8 @@ class ChannelActor(name: String, channelManager: ActorRef, server: ServerContext
       members.values.foreach { c =>
         // TODO: evaluate 'opOnly'
 
-        val info = Info.UserWhoInfo(c.ctx,
+        val info = Info.UserWhoInfo(
+          c.ctx,
           channel,
           away = false, // TODO: away
           "H" // TODO: modes

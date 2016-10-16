@@ -3,12 +3,12 @@ package com.kongo2002.scirc
 import java.net.InetSocketAddress
 
 import akka.actor.ActorSystem
-import akka.io.{Tcp, IO}
-import akka.testkit.{TestKit, ImplicitSender}
-import org.scalatest.{WordSpecLike, Matchers}
+import akka.io.{ Tcp, IO }
+import akka.testkit.{ TestKit, ImplicitSender }
+import org.scalatest.{ WordSpecLike, Matchers }
 
 class ServerSpec extends TestKit(ActorSystem("ServerSpec"))
-  with ImplicitSender with WordSpecLike with Matchers {
+    with ImplicitSender with WordSpecLike with Matchers {
 
   "Server" should {
     "handle connections" in {

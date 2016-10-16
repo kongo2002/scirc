@@ -55,9 +55,9 @@ trait OperHandler extends BaseHandler {
       // send an extra MODE message that reflects the change
       Right(ListResponse(List(
         StringResponse(s"MODE ${ctx.nick} :+o", ctx),
-        ReplyYouAreOperator(ctx)), ctx))
-    }
-    else
+        ReplyYouAreOperator(ctx)
+      ), ctx))
+    } else
       Left(ErrorPasswordMismatch(ctx))
   }
 }

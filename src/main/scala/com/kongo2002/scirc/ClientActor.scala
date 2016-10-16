@@ -17,7 +17,7 @@ package com.kongo2002.scirc
 
 import java.net.InetSocketAddress
 
-import akka.actor.{ActorRef, Props}
+import akka.actor.{ ActorRef, Props }
 import akka.io.Tcp
 import com.kongo2002.scirc.handlers._
 import com.typesafe.config.Config
@@ -53,29 +53,31 @@ object ClientActor {
  * @param nickManager associated nick manager
  * @param channelManager associated channel manager
  */
-class ClientActor(val server: ServerContext,
-    remote: InetSocketAddress,
-    val nickManager: ActorRef,
-    val channelManager: ActorRef)
-  extends CommandProcessor
-  with NickHandler
-  with PingHandler
-  with UserHandler
-  with IsonHandler
-  with JoinHandler
-  with QuitHandler
-  with PartHandler
-  with WhoIsHandler
-  with ModeHandler
-  with PrivMsgHandler
-  with TopicHandler
-  with ListHandler
-  with WhoHandler
-  with OperHandler
-  with KickHandler
-  with MotdHandler
-  with CommandHandler
-  with HasClientMetrics {
+class ClientActor(
+  val server: ServerContext,
+  remote: InetSocketAddress,
+  val nickManager: ActorRef,
+  val channelManager: ActorRef
+)
+    extends CommandProcessor
+    with NickHandler
+    with PingHandler
+    with UserHandler
+    with IsonHandler
+    with JoinHandler
+    with QuitHandler
+    with PartHandler
+    with WhoIsHandler
+    with ModeHandler
+    with PrivMsgHandler
+    with TopicHandler
+    with ListHandler
+    with WhoHandler
+    with OperHandler
+    with KickHandler
+    with MotdHandler
+    with CommandHandler
+    with HasClientMetrics {
 
   import Commands._
   import Response._
@@ -102,7 +104,7 @@ class ClientActor(val server: ServerContext,
       // TODO: LUSERS
       ReplyMyInfo(s"$host ${server.version} o o", ctx),
       getMotd
-      ), ctx)
+    ), ctx)
   }
 
   protected def getConfig[T](getter: (Config, String) => T)(path: String): T = {
@@ -113,34 +115,34 @@ class ClientActor(val server: ServerContext,
   }
 
   protected def getConfigString(path: String): String = {
-    getConfig { (cfg, p) => cfg.getString(p) } (path)
+    getConfig { (cfg, p) => cfg.getString(p) }(path)
   }
 
   protected def getConfigStringList(path: String): List[String] = {
-    getConfig { (cfg, p) => cfg.getStringList(p).asScala.toList } (path)
+    getConfig { (cfg, p) => cfg.getStringList(p).asScala.toList }(path)
   }
 
   def handle(op: Operation): Response = {
     val client = Client(self, sender, ctx)
 
     op.cmd match {
-      case IsonCmd    => handleIson(op, client)
-      case JoinCmd    => handleJoin(op, client)
-      case KickCmd    => handleKick(op, client)
-      case ListCmd    => handleList(op, client)
-      case ModeCmd    => handleMode(op, client)
-      case MotdCmd    => handleMotd(op, client)
-      case NickCmd    => handleNick(op, client)
-      case OperCmd    => handleOper(op, client)
-      case PartCmd    => handlePart(op, client)
-      case PingCmd    => handlePing(op, client)
-      case PongCmd    => noop(op, client)
+      case IsonCmd => handleIson(op, client)
+      case JoinCmd => handleJoin(op, client)
+      case KickCmd => handleKick(op, client)
+      case ListCmd => handleList(op, client)
+      case ModeCmd => handleMode(op, client)
+      case MotdCmd => handleMotd(op, client)
+      case NickCmd => handleNick(op, client)
+      case OperCmd => handleOper(op, client)
+      case PartCmd => handlePart(op, client)
+      case PingCmd => handlePing(op, client)
+      case PongCmd => noop(op, client)
       case PrivMsgCmd => handlePrivMsg(op, client)
-      case QuitCmd    => handleQuit(op, client)
-      case TopicCmd   => handleTopic(op, client)
-      case UserCmd    => handleUser(op, client)
-      case WhoCmd     => handleWho(op, client)
-      case WhoIsCmd   => handleWhois(op, client)
+      case QuitCmd => handleQuit(op, client)
+      case TopicCmd => handleTopic(op, client)
+      case UserCmd => handleUser(op, client)
+      case WhoCmd => handleWho(op, client)
+      case WhoIsCmd => handleWhois(op, client)
     }
   }
 
@@ -150,12 +152,12 @@ class ClientActor(val server: ServerContext,
 
   def handleClose: Receive = {
     case Tcp.PeerClosed =>
-      println("Connection closed")
+      log.debug("Connection closed")
 
       disconnect(Client(self, sender, ctx), "leaving", isClosed = true)
 
     case Tcp.Closed =>
-      println("Connection closed")
+      log.debug("Connection closed")
   }
 
   def handleReply: Receive = {
@@ -164,15 +166,15 @@ class ClientActor(val server: ServerContext,
   }
 
   def receive =
-    httpReceive  orElse
-    joinReceive  orElse
-    userReceive  orElse
-    nickReceive  orElse
-    modeReceive  orElse
-    isonReceive  orElse
-    whoisReceive orElse
-    handleReply  orElse
-    handleClose
+    httpReceive orElse
+      joinReceive orElse
+      userReceive orElse
+      nickReceive orElse
+      modeReceive orElse
+      isonReceive orElse
+      whoisReceive orElse
+      handleReply orElse
+      handleClose
 
   override def postStop(): Unit = {
     ClientMetrics.removeEntity(metricsName)

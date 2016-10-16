@@ -15,7 +15,7 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorLogging}
+import akka.actor.{ Actor, ActorLogging }
 import akka.event.LoggingReceive
 import akka.io.Tcp
 import akka.util.ByteString
@@ -41,13 +41,11 @@ trait CommandProcessor extends Actor with ActorLogging {
         val cmd = buffer.slice(idx, to)
         idx = to + crlf.length
         Some(cmd.stripLineEnd)
-      }
-      // empty line
+      } // empty line
       else if (to == 0) {
         buffer.delete(0, crlf.length)
         Some("")
-      }
-      else {
+      } else {
         None
       }
     }

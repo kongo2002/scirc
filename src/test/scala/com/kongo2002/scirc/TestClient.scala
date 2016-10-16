@@ -2,14 +2,14 @@ package com.kongo2002.scirc
 
 import java.net.InetSocketAddress
 
-import akka.actor.{Props, ActorSystem}
+import akka.actor.{ Props, ActorSystem }
 import akka.io.Tcp
-import akka.testkit.{ImplicitSender, TestKit}
+import akka.testkit.{ ImplicitSender, TestKit }
 import akka.util.ByteString
 import org.scalatest.Matchers
 
 abstract class TestClient(systemName: String) extends TestKit(ActorSystem(systemName))
-  with ImplicitSender with Matchers {
+    with ImplicitSender with Matchers {
 
   val ctx = ServerContext("test.localhost", 0)
   val remote = new InetSocketAddress("localhost", 6667)
@@ -32,7 +32,7 @@ abstract class TestClient(systemName: String) extends TestKit(ActorSystem(system
     sendAck(str) {
       case Tcp.Write(x, _) =>
         val got = x.decodeString("utf8")
-        expected(got) should be (true)
+        expected(got) should be(true)
     }
   }
 
@@ -40,7 +40,7 @@ abstract class TestClient(systemName: String) extends TestKit(ActorSystem(system
     sendAck(str) {
       case Tcp.Write(x, _) =>
         val got = x.decodeString("utf8")
-        got should be (expected)
+        got should be(expected)
     }
   }
 }

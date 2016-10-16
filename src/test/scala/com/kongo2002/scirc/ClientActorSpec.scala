@@ -3,7 +3,7 @@ package com.kongo2002.scirc
 import org.scalatest.WordSpecLike
 
 class ClientActorSpec extends TestClient("ClientActorSpec")
-  with WordSpecLike {
+    with WordSpecLike {
 
   "ClientActor" should {
     "reject unknown commands" in {

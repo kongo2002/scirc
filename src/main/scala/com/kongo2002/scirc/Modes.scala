@@ -43,12 +43,12 @@ object Modes {
 
   // GENERAL USER MODES
 
-  case object AwayMode            extends IrcMode('a')
-  case object InvisibleMode       extends IrcMode('i')
-  case object WallOpsMode         extends IrcMode('w')
-  case object RestrictedMode      extends IrcMode('r')
+  case object AwayMode extends IrcMode('a')
+  case object InvisibleMode extends IrcMode('i')
+  case object WallOpsMode extends IrcMode('w')
+  case object RestrictedMode extends IrcMode('r')
   case object ServerRecipientMode extends IrcMode('s')
-  case object OperatorMode        extends IrcMode('o')
+  case object OperatorMode extends IrcMode('o')
 
   val userModes = toMap(Seq(
     AwayMode,
@@ -61,27 +61,27 @@ object Modes {
 
   // USER CHANNEL MODES
 
-  case object ChannelOperatorMode   extends IrcMode('o', NArgs)
+  case object ChannelOperatorMode extends IrcMode('o', NArgs)
   // 'channel creator' flag
-  case object VoiceMode             extends IrcMode('v', NArgs)
-  case object LocalOperatorMode     extends IrcMode('O', OneArg, true)
+  case object VoiceMode extends IrcMode('v', NArgs)
+  case object LocalOperatorMode extends IrcMode('O', OneArg, true)
 
   // CHANNEL RELATED MODES
 
-  case object AnonymousMode         extends IrcMode('a')
-  case object InviteOnlyMode        extends IrcMode('i')
-  case object ModeratedMode         extends IrcMode('m')
-  case object NoOutsideMessageMode  extends IrcMode('n')
-  case object QuietMode             extends IrcMode('q')
-  case object PrivateMode           extends IrcMode('p')
-  case object SecretMode            extends IrcMode('s')
-  case object ServerReopMode        extends IrcMode('r')
+  case object AnonymousMode extends IrcMode('a')
+  case object InviteOnlyMode extends IrcMode('i')
+  case object ModeratedMode extends IrcMode('m')
+  case object NoOutsideMessageMode extends IrcMode('n')
+  case object QuietMode extends IrcMode('q')
+  case object PrivateMode extends IrcMode('p')
+  case object SecretMode extends IrcMode('s')
+  case object ServerReopMode extends IrcMode('r')
   case object OperatorTopicOnlyMode extends IrcMode('t')
-  case object ChannelKeyMode        extends IrcMode('k', OneArg)
-  case object UserLimitMode         extends IrcMode('l', OneArg)
-  case object BanMaskMode           extends IrcMode('b', NArgs)
-  case object ExceptionMaskMode     extends IrcMode('e', NArgs)
-  case object InvitationMaskMode    extends IrcMode('I', NArgs)
+  case object ChannelKeyMode extends IrcMode('k', OneArg)
+  case object UserLimitMode extends IrcMode('l', OneArg)
+  case object BanMaskMode extends IrcMode('b', NArgs)
+  case object ExceptionMaskMode extends IrcMode('e', NArgs)
+  case object InvitationMaskMode extends IrcMode('I', NArgs)
 
   val channelModes = toMap(Seq(
     // user related
@@ -207,11 +207,12 @@ object Modes {
 
     def aggregateOps[A, B](seq: Seq[A])(func: (ModeSet, A) => (ModeSet, Option[B])): (ModeSet, List[B]) = {
       // we have to invoke 'func' for *every* item
-      seq.foldLeft((this, List.empty[B])) { case ((set0, acc), x) =>
-        func(set0, x) match {
-          case (set, Some(value)) => (set, value +: acc)
-          case (set, None) => (set, acc)
-        }
+      seq.foldLeft((this, List.empty[B])) {
+        case ((set0, acc), x) =>
+          func(set0, x) match {
+            case (set, Some(value)) => (set, value +: acc)
+            case (set, None) => (set, acc)
+          }
       }
     }
   }
@@ -229,14 +230,12 @@ object Modes {
 
     protected def update(updated: ModeSet): ModeType
 
-    private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)
-                    (func: (IrcMode, String) => (ModeSet, Boolean)): (ModeSet, Option[ModeOperation]) = {
+    private def toOp(op: ModeOperationType, mode: IrcMode, arg: String)(func: (IrcMode, String) => (ModeSet, Boolean)): (ModeSet, Option[ModeOperation]) = {
       val (result, modified) = func(mode, arg)
       if (modified) {
         val value = if (arg.nonEmpty) List(arg) else Nil
         (result, Some(ModeOperation(op, mode, value)))
-      }
-      else
+      } else
         (result, None)
     }
 

@@ -197,8 +197,10 @@ object Response {
     extends SuccessNumericReply(349, s"$channel :End of channel exception list", ctx)
 
   case class ReplyWho(channel: String, info: Info.UserWhoInfo, ctx: ClientContext)
-    extends SuccessNumericReply(352,
-      s"$channel ${info.ctx.user} ${info.ctx.host} ${info.ctx.ctx.host} ${info.ctx.nick} ${info.modes} :${info.ctx.hops} ${info.ctx.realname}", ctx)
+    extends SuccessNumericReply(
+      352,
+      s"$channel ${info.ctx.user} ${info.ctx.host} ${info.ctx.ctx.host} ${info.ctx.nick} ${info.modes} :${info.ctx.hops} ${info.ctx.realname}", ctx
+    )
 
   // TODO: channel type
   case class ReplyChannelNames(channel: String, names: String, ctx: ClientContext)

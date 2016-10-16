@@ -15,7 +15,7 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import kamon.Kamon
 
 import scala.util.matching.Regex
@@ -42,9 +42,9 @@ object ChannelManager {
 }
 
 class ChannelManager(server: ServerContext)
-  extends Actor
-  with ActorLogging
-  with SendActor {
+    extends Actor
+    with ActorLogging
+    with SendActor {
 
   import ChannelActor._
   import ChannelManager._
@@ -74,7 +74,8 @@ class ChannelManager(server: ServerContext)
 
         if (isValidChannel(channelName)) {
           val newChannel = context.actorOf(
-            ChannelActor.props(channelName, self, server))
+            ChannelActor.props(channelName, self, server)
+          )
 
           channels += (channelName -> newChannel)
           channelCounter.increment()
@@ -127,7 +128,7 @@ class ChannelManager(server: ServerContext)
         ChannelGatherer(channels.values, client, UserInChannel(nick), {
           (cs: List[String], cl: Client) =>
             userSender ! UserInChannels(cs, client)
-          })
+        })
       } else {
         // no active channels -> no need to gather anything at all
         userSender ! UserInChannels(Nil, client)
@@ -138,27 +139,27 @@ class ChannelManager(server: ServerContext)
         ChannelGatherer(channels.values, client, ChannelTopic, {
           (cs: List[ReplyList], cl: Client) =>
             cl ! Msg(ListResponse(cs :+ ReplyEndOfList(client.ctx), client.ctx), client)
-          })
+        })
       } else {
         client ! Msg(ReplyEndOfList(client.ctx), client)
       }
 
-    case msg@SetTopic(channel, _, client) =>
+    case msg @ SetTopic(channel, _, client) =>
       forwardToChannel(channel, client, msg)
 
-    case msg@GetChannelModes(channel, client) =>
+    case msg @ GetChannelModes(channel, client) =>
       forwardToChannel(channel, client, msg)
 
-    case msg@SetChannelModes(channel, _, client) =>
+    case msg @ SetChannelModes(channel, _, client) =>
       forwardToChannel(channel, client, msg)
 
-    case msg@WhoQuery(channel, _, client) =>
+    case msg @ WhoQuery(channel, _, client) =>
       forwardToChannel(channel, client, msg)
 
     case msg: ChangeNick =>
       channels.values.foreach { _ forward msg }
 
-    case msg@PrivMsg(rec, _, _, _) =>
+    case msg @ PrivMsg(rec, _, _, _) =>
       getChannel(rec) foreach { _ forward msg }
   }
 }

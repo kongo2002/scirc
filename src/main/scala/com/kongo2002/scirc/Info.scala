@@ -24,8 +24,10 @@ object Info {
    * @param away currently away?
    * @param modes current mode string
    */
-  case class UserWhoInfo(ctx: ClientContext,
+  case class UserWhoInfo(
+    ctx: ClientContext,
     channel: String,
     away: Boolean,
-    modes: String)
+    modes: String
+  )
 }

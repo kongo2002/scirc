@@ -15,12 +15,12 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import akka.actor.{ Actor, ActorLogging, ActorSystem, Props }
 import akka.event.LoggingReceive
-import akka.io.{IO, Tcp}
+import akka.io.{ IO, Tcp }
 
 import scala.concurrent.duration._
-import java.net.{InetSocketAddress, URI}
+import java.net.{ InetSocketAddress, URI }
 
 import akka.actor.Terminated
 import kamon.Kamon
@@ -49,7 +49,8 @@ class Server(listen: URI, hostname: String) extends Actor with ActorLogging {
       log.debug(s"accepted new connection from '$rem'")
 
       sender ! Tcp.Register(context.watch(context.actorOf(
-        ClientActor.props(ctx, rem, nickManager, channelManager))))
+        ClientActor.props(ctx, rem, nickManager, channelManager)
+      )))
 
       clients.increment()
 

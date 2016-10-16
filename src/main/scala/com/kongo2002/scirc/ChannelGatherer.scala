@@ -17,7 +17,7 @@ package com.kongo2002.scirc
 
 import akka.actor.ActorContext
 import akka.actor.Props
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{ Actor, ActorLogging, ActorRef }
 
 import scala.concurrent.duration._
 
@@ -26,22 +26,26 @@ object ChannelGatherer {
   case class JobResult[T](result: T) extends GathererResult
   case object NoResult extends GathererResult
 
-  def apply[T, R](channels: Iterable[ActorRef],
-      client: Client,
-      message: T,
-      finisher: (List[R], Client) => Unit,
-      timeout: FiniteDuration = 1.seconds)(implicit context: ActorContext): ActorRef = {
+  def apply[T, R](
+    channels: Iterable[ActorRef],
+    client: Client,
+    message: T,
+    finisher: (List[R], Client) => Unit,
+    timeout: FiniteDuration = 1.seconds
+  )(implicit context: ActorContext): ActorRef = {
     val props = Props(new ChannelGatherer(channels, client, message, finisher, timeout))
     context.actorOf(props)
   }
 }
 
-class ChannelGatherer[T, R](channels: Iterable[ActorRef],
-    client: Client,
-    message: T,
-    finisher: (List[R], Client) => Unit,
-    timeout: FiniteDuration)
-  extends Actor with ActorLogging {
+class ChannelGatherer[T, R](
+  channels: Iterable[ActorRef],
+  client: Client,
+  message: T,
+  finisher: (List[R], Client) => Unit,
+  timeout: FiniteDuration
+)
+    extends Actor with ActorLogging {
   import ChannelGatherer._
 
   implicit val ec = context.dispatcher
@@ -52,9 +56,10 @@ class ChannelGatherer[T, R](channels: Iterable[ActorRef],
   case object GatherTimeout
 
   // send request to all given channels
-  val total = channels.foldLeft(0) { case (cnt, x) =>
-    x ! message
-    cnt + 1
+  val total = channels.foldLeft(0) {
+    case (cnt, x) =>
+      x ! message
+      cnt + 1
   }
 
   val scheduler = context.system.scheduler

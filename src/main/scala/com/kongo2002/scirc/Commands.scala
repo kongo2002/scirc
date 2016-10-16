@@ -44,42 +44,42 @@ sealed abstract class OneArgCommand(cmd: String) extends Command(cmd, 1)
 object Commands {
   import Response._
 
-  case object PingCmd    extends OneArgCommand("PING")
-  case object PongCmd    extends NoArgCommand("PONG")
-  case object NickCmd    extends OneArgCommand("NICK")
-  case object QuitCmd    extends NoArgCommand("QUIT")
-  case object IsonCmd    extends OneArgCommand("ISON")
-  case object JoinCmd    extends OneArgCommand("JOIN")
-  case object PartCmd    extends OneArgCommand("PART")
+  case object PingCmd extends OneArgCommand("PING")
+  case object PongCmd extends NoArgCommand("PONG")
+  case object NickCmd extends OneArgCommand("NICK")
+  case object QuitCmd extends NoArgCommand("QUIT")
+  case object IsonCmd extends OneArgCommand("ISON")
+  case object JoinCmd extends OneArgCommand("JOIN")
+  case object PartCmd extends OneArgCommand("PART")
   case object PrivMsgCmd extends NoArgCommand("PRIVMSG")
-  case object WhoIsCmd   extends OneArgCommand("WHOIS")
-  case object ModeCmd    extends OneArgCommand("MODE")
-  case object WhoCmd     extends OneArgCommand("WHO")
-  case object TopicCmd   extends OneArgCommand("TOPIC")
-  case object MotdCmd    extends NoArgCommand("MOTD")
-  case object ListCmd    extends NoArgCommand("LIST")
-  case object KickCmd    extends Command("KICK", 2)
-  case object OperCmd    extends Command("OPER", 2)
-  case object UserCmd    extends Command("USER", 4)
+  case object WhoIsCmd extends OneArgCommand("WHOIS")
+  case object ModeCmd extends OneArgCommand("MODE")
+  case object WhoCmd extends OneArgCommand("WHO")
+  case object TopicCmd extends OneArgCommand("TOPIC")
+  case object MotdCmd extends NoArgCommand("MOTD")
+  case object ListCmd extends NoArgCommand("LIST")
+  case object KickCmd extends Command("KICK", 2)
+  case object OperCmd extends Command("OPER", 2)
+  case object UserCmd extends Command("USER", 4)
 
   val cmds: Map[String, Command] = Map(
-    "ISON"    -> IsonCmd,
-    "JOIN"    -> JoinCmd,
-    "KICK"    -> KickCmd,
-    "LIST"    -> ListCmd,
-    "MODE"    -> ModeCmd,
-    "MOTD"    -> MotdCmd,
-    "NICK"    -> NickCmd,
-    "OPER"    -> OperCmd,
-    "PART"    -> PartCmd,
-    "PING"    -> PingCmd,
-    "PONG"    -> PongCmd,
+    "ISON" -> IsonCmd,
+    "JOIN" -> JoinCmd,
+    "KICK" -> KickCmd,
+    "LIST" -> ListCmd,
+    "MODE" -> ModeCmd,
+    "MOTD" -> MotdCmd,
+    "NICK" -> NickCmd,
+    "OPER" -> OperCmd,
+    "PART" -> PartCmd,
+    "PING" -> PingCmd,
+    "PONG" -> PongCmd,
     "PRIVMSG" -> PrivMsgCmd,
-    "QUIT"    -> QuitCmd,
-    "TOPIC"   -> TopicCmd,
-    "USER"    -> UserCmd,
-    "WHO"     -> WhoCmd,
-    "WHOIS"   -> WhoIsCmd
+    "QUIT" -> QuitCmd,
+    "TOPIC" -> TopicCmd,
+    "USER" -> UserCmd,
+    "WHO" -> WhoCmd,
+    "WHOIS" -> WhoIsCmd
   )
 
   def getArguments(args: List[String]): Array[String] = args match {

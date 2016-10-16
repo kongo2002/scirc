@@ -15,7 +15,7 @@
 
 package com.kongo2002.scirc
 
-import akka.actor.{Actor, ActorLogging, ActorRef}
+import akka.actor.{ Actor, ActorLogging, ActorRef }
 
 import scala.util.matching.Regex
 import Response._
@@ -88,8 +88,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
             } else {
               sender ! NickErr(ErrorErroneousNick(to, client.ctx), client)
             }
-          }
-          else
+          } else
             // TODO: use correct numeric reply
             sender ! NickErr(StringError("invalid user", client.ctx), client)
         case None =>
@@ -126,7 +125,7 @@ class NickManager extends Actor with ActorLogging with SendActor {
         sender ! NicksOnline(online, client)
 
     case WhoIsNicks(ns, client) =>
-      ns.foreach (n => whois(n, client))
+      ns.foreach(n => whois(n, client))
 
     case DisconnectNick(nick) =>
       removeNick(nick)

@@ -40,9 +40,9 @@ trait ModeHandler extends BaseHandler {
       // but the practice of other servers appears to be different...
       Right(ListResponse(List(
         ReplyUserModeIs(ctx.modes.values, ctx),
-        HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}", ctx)), ctx))
-    }
-    else
+        HostReply(s"MODE ${ctx.nick} ${ctx.modes.modeString}", ctx)
+      ), ctx))
+    } else
       Left(ErrorUsersDontMatch(ctx))
   }
 
